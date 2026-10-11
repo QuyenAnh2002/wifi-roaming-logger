@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -28,6 +28,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.CINNAMON_BUN])
@@ -36,7 +37,7 @@ class CsvShareTest {
     private val fixture = CsvShare(mainActivity) { Uri.parse("content://test.fileprovider/exports/" + it.name) }
 
     @Test
-    fun writeKeepsOnlyLatestExport() {
+    fun prepareKeepsOnlyLatestExport() {
         // Arrange
         fixture.write("first.csv", "first")
         // Act
@@ -81,6 +82,16 @@ class CsvShareTest {
     }
 
     @Test
+    fun prepareReturnsEmptyTargetInExportsDirectory() {
+        // Act
+        val actual = fixture.prepare("export.csv")
+        // Assert
+        assertThat(actual.name).isEqualTo("export.csv")
+        assertThat(actual.exists()).isFalse
+        assertThat(actual.parentFile!!.isDirectory).isTrue
+    }
+
+    @Test
     fun chooserSharesMultipleFiles() {
         // Arrange
         val first = Uri.parse("content://media/external/downloads/1")
@@ -97,4 +108,9 @@ class CsvShareTest {
         assertThat(send.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotZero
         assertThat(send.clipData!!.itemCount).isEqualTo(2)
     }
+
+    private fun CsvShare.write(
+        fileName: String,
+        data: String,
+    ): File = prepare(fileName).apply { writeText(data) }
 }

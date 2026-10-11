@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -35,16 +35,14 @@ class CsvShare(
         FileProvider.getUriForFile(context, context.packageName + AUTHORITY_SUFFIX, it)
     },
 ) {
-    fun write(
-        fileName: String,
-        data: String,
-    ): File {
+    /** Returns where a new export named [fileName] goes; earlier exports are removed so only one is kept. */
+    fun prepare(fileName: String): File {
         val directory =
             exportsDirectory().apply {
                 deleteRecursively()
                 mkdirs()
             }
-        return File(directory, fileName).apply { writeText(data) }
+        return File(directory, fileName)
     }
 
     fun latest(): File? = exportsDirectory().listFiles()?.maxByOrNull { it.lastModified() }

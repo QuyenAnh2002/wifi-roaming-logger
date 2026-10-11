@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -47,7 +47,6 @@ import com.vrem.wifianalyzer.navigation.options.OptionMenu
 import com.vrem.wifianalyzer.navigation.options.collectRunTimer
 import com.vrem.wifianalyzer.wifi.accesspoint.ConnectionView
 import com.vrem.wifianalyzer.wifi.logger.ConnectionLogger
-import com.vrem.wifianalyzer.wifi.model.WiFiData
 import com.vrem.wifianalyzer.wifi.scanner.collectWiFiData
 
 @OpenClass
@@ -134,12 +133,21 @@ class MainActivity :
         }
     }
 
-    fun exportCsv(wiFiData: WiFiData) {
-        runCatching {
-            val file = csvShare.write(csvExport.fileName(), csvExport.data(this, wiFiData, connectionLogger.location()))
-            startActivity(csvShare.chooser(file, saveExportIntent()))
-        }.onFailure {
+    /** Shares every scan observation recorded since the app started, not just the list on screen. */
+    fun exportCsv() {
+        val file = runCatching { csvShare.prepare(csvExport.fileName()) }.getOrNull()
+        if (file == null) {
             Toast.makeText(this, R.string.export_not_available, Toast.LENGTH_LONG).show()
+            return
+        }
+        MainContext.INSTANCE.scanRecorder.export(file) { success ->
+            if (isDestroyed) {
+                return@export
+            }
+            val shared = success && runCatching { startActivity(csvShare.chooser(file, saveExportIntent())) }.isSuccess
+            if (!shared) {
+                Toast.makeText(this, R.string.export_not_available, Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -235,8 +243,11 @@ class MainActivity :
         if (MainContext.INSTANCE.permissionService.permissionGranted()) {
             if (!MainContext.INSTANCE.permissionService.locationEnabled()) {
                 startLocationSettings()
-            } else if (MainContext.INSTANCE.runTimer.running) {
-                connectionLogger.start()
+            } else {
+                MainContext.INSTANCE.locationTracker.start(mainLooper)
+                if (MainContext.INSTANCE.runTimer.running) {
+                    connectionLogger.start()
+                }
             }
             scannerService.resume()
         } else {
@@ -263,6 +274,7 @@ class MainActivity :
             startLocationSettings()
             return
         }
+        mainContext.locationTracker.start(mainLooper)
         mainContext.runTimer.start()
         connectionLogger.start()
     }
@@ -283,6 +295,7 @@ class MainActivity :
 
     public override fun onStop() {
         connectionLogger.stop()
+        MainContext.INSTANCE.locationTracker.stop()
         MainContext.INSTANCE.scannerService.stop()
         updateActionBar()
         super.onStop()

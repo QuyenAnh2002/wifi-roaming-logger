@@ -19,10 +19,10 @@ Các tài liệu `USER_MANUAL.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`
 
 | # | Chức năng | Repo gốc | Bản này |
 |---|---|---|---|
-| 1 | **Export CSV** | Gửi nội dung dạng văn bản, phân cách bằng `\|`, qua bảng chia sẻ | Tạo **file `.csv` thật** theo định dạng chung 35 cột (thêm vị trí, khoảng cách ước lượng, hãng sản xuất, cờ `connected`…). Mở **bảng chia sẻ Android** (Zalo, Telegram, Gmail…) kèm mục **"Save to file"** để lưu vào chỗ tùy chọn |
+| 1 | **Export CSV** | Gửi nội dung dạng văn bản, phân cách bằng `\|`, qua bảng chia sẻ; chỉ là ảnh chụp danh sách AP lúc bấm | Tạo **file `.csv` thật** theo định dạng chung 35 cột (thêm vị trí, khoảng cách ước lượng, hãng sản xuất, cờ `connected`…) chứa **toàn bộ chuỗi thời gian từ lúc mở app**: mỗi lần một BSSID được quét thấy là một dòng, với RSSI thô và thời điểm thực sự quét thấy. Mở **bảng chia sẻ Android** (Zalo, Telegram, Gmail…) kèm mục **"Save to file"** để lưu vào chỗ tùy chọn |
 | 2 | **Log kết nối theo thời gian** (dòng `CONNECTION` trong `wifi-log-*.csv`) | Không có | Ghi trạng thái AP đang kết nối (SSID, BSSID, RSSI, tần số, tốc độ, trạng thái kết nối) **mỗi khi có thay đổi**, đọc mỗi 1 giây, kèm sự kiện roam / mất kết nối |
-| 3 | **Log tất cả BSSID theo thời gian** (dòng `SCAN` trong **cùng file** `wifi-log-*.csv`) | Không có | Mỗi lần quét, ghi **mỗi BSSID một dòng**, kể cả nhiều BSSID cùng SSID. Dùng RSSI thô của lần quét và thời điểm thực sự quét thấy. **Mỗi lượt đo chỉ tạo 1 file CSV** |
-| 4 | **Vị trí thiết bị** | Không có | Mỗi dòng CSV có vĩ độ, kinh độ, sai số, độ cao, tốc độ, nguồn vị trí (GPS / network / fused) |
+| 3 | **Log tất cả BSSID theo thời gian** (dòng `SCAN` trong **cùng file** `wifi-log-*.csv`) | Không có | Mỗi lần quét, ghi **mỗi BSSID một dòng**, kể cả nhiều BSSID cùng SSID. Dùng RSSI thô của lần quét và thời điểm thực sự quét thấy. **Mỗi lượt đo chỉ tạo 1 file CSV**. Dòng `SCAN` của log và của Export sinh ra từ **cùng một chỗ** (`ScanRecorder`) nên giống hệt nhau |
+| 4 | **Vị trí thiết bị** | Không có | Mỗi dòng CSV có vĩ độ, kinh độ, sai số, độ cao, tốc độ, nguồn vị trí (GPS / network / fused). Lấy **bản định vị gần nhất với thời điểm của dòng** (với dòng `SCAN`: lúc BSSID được quét thấy), không phải vị trí lúc ghi file |
 | 5 | **Ước lượng khoảng cách tới AP** | Chỉ hiển thị `~x.xm` trên màn hình (FSPL) | Thêm vào CSV: `distance_fspl_m` và log-distance với n = 2; 2,5; 3; 3,5 |
 | 6 | **Điều khiển phiên đo bằng nút Play / Pause** | Nút chỉ tạm dừng việc quét | App vẫn quét và hiển thị AP như bản gốc, nhưng **chỉ ghi log khi bấm Play**. **Bấm Pause thì đóng file và mở ngay bảng chia sẻ** file CSV của lượt đo. Mở app **không tự bắt đầu đo** |
 | 7 | **Bộ đếm thời gian lượt đo** | Không có | Hiển thị `HH:MM:SS` cạnh nút Play / Pause; dừng và làm mờ khi Pause |
@@ -39,25 +39,26 @@ Các tài liệu `USER_MANUAL.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`
 |---|---|
 | `app/src/main/kotlin/com/vrem/wifianalyzer/export/Csv.kt` | Hàm tiện ích CSV dùng chung: escape, tạo dòng, định dạng số, BOM UTF-8, tính các cột khoảng cách |
 | `app/src/main/kotlin/com/vrem/wifianalyzer/export/CsvRow.kt` | **Định dạng CSV chung 35 cột** (enum `CsvColumn`), `CSV_HEADER`, `csvRow()`, giá trị thời gian / vị trí / khoảng cách |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/export/CsvExport.kt` | Tạo dòng `SCAN` (dùng cho Export và cho log) |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/export/CsvShare.kt` | Ghi file export vào cache, tạo bảng chia sẻ (một hoặc nhiều file) qua `FileProvider` |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/ConnectionLogger.kt` | Mở / đóng file `wifi-log` của lượt đo, ghi dòng `CONNECTION`, điều phối `ScanLogger` và `LocationTracker` |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/ScanLogger.kt` | Ghi dòng `SCAN` cho mọi BSSID vào **cùng file** với `ConnectionLogger` |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/LocationTracker.kt` | Lấy vị trí từ GPS / network / fused |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/LogFile.kt` | Tạo và ghi file trong `Download/WiFiAnalyzer` (MediaStore) |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/export/CsvExport.kt` | Tạo dòng `SCAN` (dùng cho Export và cho log); tên file Export |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/export/CsvShare.kt` | Chuẩn bị file export trong cache, tạo bảng chia sẻ (một hoặc nhiều file) qua `FileProvider` |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/ConnectionLogger.kt` | Mở / đóng file `wifi-log` của lượt đo, ghi dòng `CONNECTION`, giao file đang mở cho `ScanRecorder` để dòng `SCAN` của lượt đo vào cùng file |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/ScanRecorder.kt` | **Nơi duy nhất** biến kết quả quét thành dòng `SCAN`: lọc quan sát mới, đổi `ScanResult.timestamp` ra giờ thật, gắn vị trí; ghi vào lịch sử phiên (cho Export) và vào file của lượt đo (khi đang đo) |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/LocationTracker.kt` | Lấy vị trí từ GPS / network / fused; giữ lịch sử ~2 phút các bản định vị để chọn bản gần nhất với thời điểm của từng dòng |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/logger/LogFile.kt` | Tạo và ghi file trong `Download/WiFiAnalyzer` (MediaStore); an toàn khi ghi từ nhiều luồng |
 | `app/src/main/kotlin/com/vrem/wifianalyzer/navigation/options/RunTimer.kt` | Bộ đếm thời gian lượt đo |
 
 ### 2.2. File mã nguồn đã sửa
 
 | File | Thay đổi |
 |---|---|
-| `app/src/main/kotlin/com/vrem/wifianalyzer/MainActivity.kt` | Export ra bảng chia sẻ; xử lý "Save to file" (`onNewIntent`); `toggleRun` / `startRun` / `stopRun` / `shareRun`; logger dùng chung khi activity bị tạo lại; chỉ chạy logger khi đang có lượt đo; cập nhật bộ đếm mỗi giây |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/MainContext.kt` | Thêm `runTimer` dùng chung toàn app |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/navigation/items/ExportItem.kt` | Export gọi `MainActivity.exportCsv(wiFiData)` thay cho luồng chia sẻ văn bản cũ |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/MainActivity.kt` | Export ra bảng chia sẻ; xử lý "Save to file" (`onNewIntent`); `toggleRun` / `startRun` / `stopRun` / `shareRun`; logger dùng chung khi activity bị tạo lại; chỉ chạy logger khi đang có lượt đo; bật `LocationTracker` khi app ở foreground; cập nhật bộ đếm mỗi giây |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/MainContext.kt` | Thêm `runTimer`, `locationTracker`, `scanRecorder` dùng chung toàn app (tạo một lần cho mỗi tiến trình, không mất khi xoay màn hình) |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/navigation/items/ExportItem.kt` | Export gọi `MainActivity.exportCsv()` (chia sẻ lịch sử phiên) thay cho luồng chia sẻ văn bản cũ |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/scanner/ScannerCallback.kt`, `ScannerService.kt` | Mỗi lần app nhận kết quả quét, chuyển nguyên kết quả thô cho `ScanRecorder` |
 | `app/src/main/kotlin/com/vrem/wifianalyzer/navigation/items/NavigationItems.kt` | `ExportItem()` không còn cần tham số `Export` |
 | `app/src/main/kotlin/com/vrem/wifianalyzer/navigation/options/OptionAction.kt` | Nút run gọi `MainActivity.toggleRun()` |
 | `app/src/main/kotlin/com/vrem/wifianalyzer/navigation/availability/ScannerSwitch.kt` | Biểu tượng Play / Pause theo trạng thái ghi log; ẩn / hiện và làm mờ bộ đếm (`runTimerText`) |
-| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/scanner/Transformer.kt` | Tách hàm `ScanResult.toWiFiDetail()` để `ScanLogger` dùng chung |
+| `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/scanner/Transformer.kt` | Tách hàm `ScanResult.toWiFiDetail()` để `ScanRecorder` dùng chung |
 | `app/src/main/kotlin/com/vrem/wifianalyzer/wifi/model/WiFiUtils.kt` | Thêm `calculateDistanceLogDistance()` (mô hình log-distance) |
 
 ### 2.3. Tài nguyên và cấu hình
@@ -73,8 +74,9 @@ Các tài liệu `USER_MANUAL.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`
 
 ### 2.4. Test
 
-- **Test mới:** `CsvTest`, `CsvRowTest`, `CsvExportTest`, `CsvShareTest` (`app/src/test/.../export/`), `ConnectionLoggerTest`, `ScanLoggerTest`, `LocationTrackerTest`, `LogFileTest` (`app/src/test/.../wifi/logger/`), `RunTimerTest` (`app/src/test/.../navigation/options/`).
-- **Test đã sửa:** `MainActivityTest`, `ExportItemTest`, `OptionActionTest`, `ScannerSwitchOnTest`, `ScannerSwitchOffTest`, `TransformerTest`, `WiFiUtilsTest`.
+- **Test mới:** `CsvTest`, `CsvRowTest`, `CsvExportTest`, `CsvShareTest` (`app/src/test/.../export/`), `ConnectionLoggerTest`, `ScanRecorderTest`, `LocationTrackerTest`, `LogFileTest` (`app/src/test/.../wifi/logger/`), `RunTimerTest` (`app/src/test/.../navigation/options/`).
+- **Test đã sửa:** `MainActivityTest`, `MainContextHelper`, `ExportItemTest`, `OptionActionTest`, `ScannerSwitchOnTest`, `ScannerSwitchOffTest`, `ScannerCallbackTest`, `ScannerServiceTest`, `TransformerTest`, `WiFiUtilsTest`.
+- **Đã xóa:** `Export.kt`, `ExportIntent.kt` của repo gốc (không còn dùng) và test của chúng; `ScanLogger.kt` (thay bằng `ScanRecorder.kt`).
 
 ### 2.5. Công cụ phân tích (ngoài app)
 
@@ -91,7 +93,7 @@ Các tài liệu `USER_MANUAL.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`
 2. **Bấm ▶ (Play):** bắt đầu lượt đo. Bộ đếm chạy, app tạo **một file** `wifi-log-YYYYMMDD-HHMMSS.csv` trong `Download/WiFiAnalyzer/`.
 3. **Trong lúc đo**, nếu mở Export, bấm Home hay xoay màn hình, logger ghi dòng `PAUSE` / `RESUME` vào **cùng file**. Logger dừng khi app chạy nền.
 4. **Bấm ⏸ (Pause):** kết thúc lượt đo, đóng file và **mở bảng chia sẻ** để gửi nó đi. File vẫn nằm trong `Download/WiFiAnalyzer/` kể cả khi không gửi.
-5. **Menu ☰ → Export:** chụp danh sách AP hiện tại thành `WiFiAnalyzer-*.csv`, rồi mở bảng chia sẻ (có mục "Save to file").
+5. **Menu ☰ → Export:** xuất **mọi lần quét từ lúc mở app** (không cần bấm Play) thành `WiFiAnalyzer-*.csv`, rồi mở bảng chia sẻ (có mục "Save to file"). Bấm Export nhiều lần thì mỗi lần nhận toàn bộ lịch sử đến thời điểm đó. Lịch sử bắt đầu lại khi tiến trình app khởi động lại (vuốt tắt app, hệ thống dọn app chạy nền…).
 
 **Mẹo:**
 - Muốn quét dày hơn (khoảng mỗi 5 giây), vào **Tùy chọn nhà phát triển → tắt "Hạn chế quét tìm Wi-Fi"**. Mặc định Android chỉ cho quét khoảng 4 lần / 2 phút.
@@ -111,7 +113,7 @@ App chỉ sinh **hai loại file**, và cả hai dùng **cùng một bộ 35 c�
 | File | Khi nào tạo | Chứa loại dòng |
 |---|---|---|
 | `wifi-log-YYYYMMDD-HHMMSS.csv` | Mỗi lượt đo (Play → Pause) | `CONNECTION` và `SCAN`, xen kẽ theo thời gian ghi |
-| `WiFiAnalyzer-YYYYMMDD-HHMMSS.csv` | Khi bấm Export trong menu | Chỉ `SCAN` (ảnh chụp danh sách AP tại thời điểm bấm) |
+| `WiFiAnalyzer-YYYYMMDD-HHMMSS.csv` | Khi bấm Export trong menu | Chỉ `SCAN`: mọi quan sát BSSID từ lúc mở app tới lúc bấm Export, theo thứ tự thời gian quét |
 
 ### 4.1. Danh sách cột
 
@@ -119,13 +121,14 @@ App chỉ sinh **hai loại file**, và cả hai dùng **cùng một bộ 35 c�
 
 | Cột | `CONNECTION` (kết nối hiện tại) | `SCAN` (một BSSID quét thấy) |
 |---|---|---|
-| `epoch_ms`, `time` | Lúc ghi dòng | Lúc BSSID thực sự được quét thấy (Export: lúc bấm Export) |
+| `epoch_ms`, `time` | Lúc ghi dòng | Lúc BSSID thực sự được quét thấy (cả log lẫn Export) |
 | `event` | Lý do ghi dòng (mục 4.3) | Trống |
 | `ssid`, `bssid` | AP đang kết nối (trống khi mất kết nối) | AP quét thấy |
 | `connected` | `true` khi đang gắn vào một AP | `true` nếu BSSID này là AP đang kết nối |
-| `rssi_dbm` | RSSI của kết nối (`-127` = chưa đo được) | RSSI thô của lần quét (Export: trung bình vài lần quét) |
+| `rssi_dbm` | RSSI của kết nối; trống khi chưa đo được | RSSI thô của lần quét (cả log lẫn Export) |
 | `frequency_mhz` | Tần số kênh chính | Tần số kênh chính |
 | `primary_channel` … `range_end_mhz` | Trống | Kênh, tâm kênh, độ rộng kênh, dải tần |
+| Giá trị không xác định | Android trả `-127` (RSSI) hoặc `-1` (tần số, tốc độ) khi chưa biết: ô để **trống**, không ghi giá trị giả | Như bên trái; số kênh nằm ngoài bảng kênh của app (ví dụ kênh 14) cũng để trống |
 | `link_speed_mbps`, `supplicant_state` | Tốc độ liên kết, giai đoạn kết nối (`COMPLETED` = dùng được) | Trống |
 | `distance_*` | Tính từ `rssi_dbm` và `frequency_mhz`; trống nếu RSSI không hợp lệ | Như bên trái |
 | `standard` … `vendor` | Trống | Chuẩn Wi-Fi, bảo mật, chuỗi capabilities, roam nhanh, 802.11mc, hãng |
@@ -140,22 +143,22 @@ Cột **Dòng** cho biết trường có giá trị ở loại dòng nào: **C**
 
 | # | Trường | Kiểu / đơn vị | Ý nghĩa | Dòng | Ví dụ |
 |---|---|---|---|---|---|
-| 1 | `epoch_ms` | Số nguyên, mili-giây (Unix, UTC) | Thời điểm của dòng, tính từ 1970-01-01 UTC. **C:** lúc ghi dòng. **S:** lúc BSSID thực sự được quét thấy (lấy từ `ScanResult.timestamp`). **Export:** lúc bấm Export. Dùng cột này để sắp xếp hoặc ghép với dữ liệu khác | C, S | `1791640797747` |
+| 1 | `epoch_ms` | Số nguyên, mili-giây (Unix, UTC) | Thời điểm của dòng, tính từ 1970-01-01 UTC. **C:** lúc ghi dòng. **S:** lúc BSSID thực sự được quét thấy (`ScanResult.timestamp`, đổi từ đồng hồ khởi động sang giờ thật; nếu Android trả giá trị thiếu hoặc ở tương lai thì dùng lúc nhận kết quả). Áp dụng cho cả log và Export. Dùng cột này để sắp xếp hoặc ghép với dữ liệu khác | C, S | `1791640797747` |
 | 2 | `time` | ISO 8601, giờ địa phương, có mili-giây và múi giờ | Cùng thời điểm với `epoch_ms`, ở dạng dễ đọc | C, S | `2026-10-10T20:59:57.747+07:00` |
 | 3 | `row_type` | `CONNECTION` / `SCAN` | Loại dòng: trạng thái kết nối hiện tại, hay một BSSID quét thấy | C, S | `SCAN` |
 | 4 | `event` | Chuỗi; nhiều giá trị ghép bằng `+` | Lý do ghi dòng `CONNECTION` (bảng 4.3) | C | `BSSID+FREQUENCY+RSSI` |
 | 5 | `ssid` | Chuỗi | Tên mạng Wi-Fi. **C:** mạng đang kết nối, trống khi mất kết nối. **S:** mạng phát ra BSSID này; `*hidden*` nếu mạng ẩn tên | C, S | `PHENIKAA-UNI` |
 | 6 | `bssid` | Địa chỉ MAC `aa:bb:cc:dd:ee:ff` | Địa chỉ MAC của một radio trên AP. Một AP vật lý thường có nhiều BSSID (mỗi băng tần, mỗi SSID một BSSID), nên nhiều BSSID có thể cùng một SSID | C, S | `76:3a:0e:32:4e:99` |
 | 7 | `connected` | `true` / `false` | **C:** `true` khi điện thoại đang gắn vào một AP, `false` khi mất kết nối. **S:** `true` nếu BSSID của dòng là AP đang kết nối. "Gắn vào" chưa chắc đã kết nối xong; xem `supplicant_state` | C, S | `true` |
-| 8 | `rssi_dbm` | Số nguyên, dBm | Cường độ tín hiệu nhận được, càng gần 0 càng mạnh (bảng 4.3). **C:** RSSI của kết nối, cập nhật khoảng mỗi giây; `-127` = chưa đo được. **S:** RSSI thô của lần quét đó (**Export:** trung bình vài lần quét) | C, S | `-60` |
-| 9 | `frequency_mhz` | MHz | Tần số của kênh chính 20 MHz. 2412–2484: băng 2,4 GHz; 5160–5885: 5 GHz; 5955–7115: 6 GHz | C, S | `5320` |
-| 10 | `primary_channel` | Số kênh | Số kênh chính, ứng với `frequency_mhz` | S | `64` |
+| 8 | `rssi_dbm` | Số nguyên, dBm | Cường độ tín hiệu nhận được, càng gần 0 càng mạnh (bảng 4.3). **C:** RSSI của kết nối, cập nhật khoảng mỗi giây; **trống** khi Android chưa đo được (`-127`). **S:** RSSI thô của lần quét đó, cả log lẫn Export (không phải giá trị đã làm mượt hiển thị trên màn hình) | C, S | `-60` |
+| 9 | `frequency_mhz` | MHz | Tần số của kênh chính 20 MHz. 2412–2484: băng 2,4 GHz; 5160–5885: 5 GHz; 5955–7115: 6 GHz. Trống nếu Android không biết | C, S | `5320` |
+| 10 | `primary_channel` | Số kênh | Số kênh chính, ứng với `frequency_mhz`. Trống nếu tần số nằm ngoài bảng kênh của app (ví dụ kênh 14 = 2484 MHz) | S | `64` |
 | 11 | `center_channel` | Số kênh | Kênh ở tâm cả dải khi AP ghép kênh 40/80/160/320 MHz; bằng `primary_channel` nếu kênh 20 MHz | S | `58` |
 | 12 | `center_frequency_mhz` | MHz | Tần số ở tâm cả dải kênh | S | `5290` |
 | 13 | `width_mhz` | MHz | Độ rộng kênh: 20, 40, 80, 160 hoặc 320 | S | `80` |
-| 14 | `range_start_mhz` | MHz | Tần số thấp nhất của dải AP chiếm | S | `5250` |
-| 15 | `range_end_mhz` | MHz | Tần số cao nhất của dải AP chiếm | S | `5330` |
-| 16 | `link_speed_mbps` | Mbps | Tốc độ liên kết ở tầng vật lý do card Wi-Fi báo. **Không phải** tốc độ tải thực tế | C | `866` |
+| 14 | `range_start_mhz` | MHz | Tần số thấp nhất của dải AP chiếm = `center_frequency_mhz − width_mhz / 2` | S | `5250` |
+| 15 | `range_end_mhz` | MHz | Tần số cao nhất của dải AP chiếm = `center_frequency_mhz + width_mhz / 2` | S | `5330` |
+| 16 | `link_speed_mbps` | Mbps | Tốc độ liên kết ở tầng vật lý do card Wi-Fi báo. **Không phải** tốc độ tải thực tế. Trống nếu Android không biết | C | `866` |
 | 17 | `supplicant_state` | Chuỗi | Giai đoạn kết nối Wi-Fi (bảng 4.3). `COMPLETED` = kết nối xong, dùng được | C | `COMPLETED` |
 | 18 | `distance_fspl_m` | Mét, 1 chữ số thập phân | Khoảng cách ước lượng tới AP theo FSPL (mục 4.4), từ `rssi_dbm` và `frequency_mhz`. Trống nếu RSSI không hợp lệ. **Chỉ nên so sánh tương đối** | C, S | `4.5` |
 | 19 | `distance_logdistance_2` | Mét | Log-distance với hệ số suy hao n = 2 (không gian trống). Luôn bằng `distance_fspl_m` | C, S | `4.5` |
@@ -168,13 +171,13 @@ Cột **Dòng** cho biết trường có giá trị ở loại dòng nào: **C**
 | 26 | `fast_roaming` | Các giá trị cách nhau bởi dấu cách | Các chuẩn hỗ trợ chuyển AP nhanh mà AP công bố (bảng 4.3); trống nếu không có | S | `802.11k 802.11v` |
 | 27 | `is_80211mc` | `true` / `false` | AP có hỗ trợ đo khoảng cách bằng Wi-Fi RTT (802.11mc, FTM) hay không | S | `false` |
 | 28 | `vendor` | Chuỗi | Hãng sản xuất, tra từ 3 byte đầu (OUI) của BSSID. **Trống** với BSSID ảo do AP tự sinh (byte đầu có bit "locally administered", ví dụ `5a:…`, `76:…`) hoặc khi không có trong bảng tra | S | `TP LINK SYSTEMS INC` |
-| 29 | `latitude` | Độ thập phân, hệ WGS-84, 7 chữ số | Vĩ độ của điện thoại lúc ghi dòng (dương = Bắc). Với dòng `SCAN`, đây là vị trí lúc ghi dòng, không phải lúc quét thấy | C, S | `21.0285123` |
+| 29 | `latitude` | Độ thập phân, hệ WGS-84, 7 chữ số | Vĩ độ của điện thoại (dương = Bắc), lấy từ **bản định vị gần nhất với `epoch_ms` của dòng**. Với dòng `SCAN`, đó là lúc BSSID được quét thấy | C, S | `21.0285123` |
 | 30 | `longitude` | Độ thập phân, WGS-84 | Kinh độ (dương = Đông) | C, S | `105.8048456` |
 | 31 | `accuracy_m` | Mét | Bán kính sai số vị trí theo phương ngang, độ tin cậy 68%, do nguồn vị trí tự ước lượng | C, S | `13.9` |
 | 32 | `altitude_m` | Mét | Độ cao so với mặt ellipsoid WGS-84. Không đáng tin khi nguồn là `network` | C, S | `58.4` |
 | 33 | `speed_mps` | m/s, 2 chữ số thập phân | Tốc độ di chuyển của điện thoại; chỉ có khi nguồn vị trí cung cấp (thường là GPS) | C, S | `1.25` |
 | 34 | `location_provider` | `gps` / `network` / `fused` | Nguồn của vị trí (bảng 4.3) | C, S | `network` |
-| 35 | `location_age_ms` | Mili-giây | Vị trí đã cũ bao lâu so với lúc ghi dòng. Giá trị lớn (ví dụ > 5000) nghĩa là vị trí chưa được cập nhật | C, S | `1988` |
+| 35 | `location_age_ms` | Mili-giây, **có dấu** | `epoch_ms` của dòng trừ thời điểm của bản định vị. Dương: bản định vị lấy trước thời điểm của dòng; **âm**: lấy sau (chỉ gặp ở dòng `SCAN`). Trị tuyệt đối lớn (ví dụ > 5000) nghĩa là vị trí không khớp thời gian, nên lọc bỏ khi cần độ chính xác vị trí | C, S | `1988` |
 
 ### 4.3. Các giá trị có thể gặp
 
@@ -246,7 +249,7 @@ Cột **Dòng** cho biết trường có giá trị ở loại dòng nào: **C**
 | −67 … −70 dBm | Ngưỡng thường dùng cho gọi thoại / video ổn định |
 | −70 … −80 dBm | Yếu, tốc độ giảm |
 | ≤ −80 dBm | Rất yếu, dễ mất kết nối hoặc chuyển AP |
-| `-127` | Không hợp lệ (chưa đo được) |
+| *(trống)* | Không hợp lệ (Android trả `-127`: chưa đo được) |
 
 ### 4.4. Công thức khoảng cách (ước lượng thô)
 
@@ -266,11 +269,12 @@ Với n = 2, log-distance trùng với FSPL. Kết quả chỉ nên dùng để 
 ### 5.1. Sơ đồ luồng dữ liệu
 
 ```
-Android WifiManager ──► WiFiManagerWrapper.wiFiInfo() ──► ConnectionLogger.sample() ──► line() ──┐
-                    └─► WiFiManagerWrapper.scanResults() ─► ScanLogger.log() ──► CsvExport.row() ─┴─► LogFile (wifi-log, 1 file)
+Android WifiManager ──► WiFiManagerWrapper.wiFiInfo() ──► ConnectionLogger.sample() ──► line() ─────────────────────┐
+                    └─► ScannerCallback.onSuccess() ──► ScanRecorder.record() ──► CsvExport.row() ──┬─► LogFile (wifi-log, 1 file, khi đang đo)
+                        (WiFiManagerWrapper.scanResults(), broadcast SCAN_RESULTS_AVAILABLE)         └─► lịch sử phiên (noBackupFilesDir/scan-history.csv)
 ConnectivityManager.NetworkCallback ──► ConnectionLogger.trigger() (đọc ngay khi kết nối thay đổi)
-LocationManager (gps / network / fused) ──► LocationTracker.update() ──► LocationTracker.current() ──► cột vị trí
-ScannerService.wiFiData() (danh sách AP của app) ──► MainActivity.exportCsv() ──► CsvExport.data() ──► CsvShare (Export)
+LocationManager (gps / network / fused) ──► LocationTracker.update() ──► LocationTracker.at(t) / current() ──► cột vị trí
+Menu Export ──► MainActivity.exportCsv() ──► ScanRecorder.export() (header + lịch sử phiên) ──► CsvShare (bảng chia sẻ)
 ```
 
 ### 5.2. Bảng hàm theo nhóm cột
@@ -281,8 +285,8 @@ ScannerService.wiFiData() (danh sách AP của app) ──► MainActivity.expor
 | Chu kỳ đọc kết nối | `ConnectionLogger.poll()` (mỗi `INTERVAL_MS` = 1000 ms), `ConnectionLogger.trigger()` | `wifi/logger/ConnectionLogger.kt` | `Handler.postDelayed`; `ConnectivityManager.registerNetworkCallback` (`onAvailable/onLost/onCapabilitiesChanged`) |
 | Sự kiện (`event`) | `ConnectionLogger.changes(previous, current)` | `wifi/logger/ConnectionLogger.kt` | So sánh hai mẫu liên tiếp |
 | Ghép một dòng `CONNECTION` | `ConnectionLogger.line(timeMs, events, sample, location)` | `wifi/logger/ConnectionLogger.kt` | |
-| Kết quả quét (mọi BSSID) | `WiFiManagerWrapper.scanResults()` → `ScanLogger.log()` | `wifi/logger/ScanLogger.kt` | `WifiManager.getScanResults()`; kích hoạt bởi broadcast `SCAN_RESULTS_AVAILABLE_ACTION` |
-| Thời điểm quét thấy BSSID | `ScanLogger.log()`: dùng `ScanResult.timestamp` đổi sang giờ thật | `wifi/logger/ScanLogger.kt` | `ScanResult.timestamp`, `SystemClock.elapsedRealtimeNanos()` |
+| Kết quả quét (mọi BSSID) | `ScannerCallback.onSuccess()` → `ScanRecorder.record()` → `rows()` (lọc quan sát mới theo cặp BSSID + SSID và `ScanResult.timestamp`) | `wifi/scanner/ScannerCallback.kt`, `wifi/logger/ScanRecorder.kt` | `WifiManager.getScanResults()`; kích hoạt bởi broadcast `SCAN_RESULTS_AVAILABLE_ACTION` và lần quét định kỳ của app |
+| Thời điểm quét thấy BSSID | `ScanRecorder.rows()` / `seenNanos()`: đổi `ScanResult.timestamp` (µs từ lúc khởi động) sang giờ thật | `wifi/logger/ScanRecorder.kt` | `ScanResult.timestamp`, `SystemClock.elapsedRealtimeNanos()` |
 | Chuyển `ScanResult` → thông tin AP | `ScanResult.toWiFiDetail(level)` | `wifi/scanner/Transformer.kt` | `ScanResult.SSID/wifiSsid/BSSID/level/frequency/centerFreq0/centerFreq1/channelWidth/capabilities` |
 | Kênh, tần số, độ rộng | `WiFiSignal.primaryWiFiChannel`, `centerWiFiChannel`, `wiFiWidth`, `wiFiChannelStart/End` | `wifi/model/WiFiSignal.kt`, `wifi/model/WiFiWidth.kt` | Tính từ `ScanResult` |
 | Chuẩn Wi-Fi (`standard`) | `WiFiStandard.findOne(scanResult)`, `WiFiSignalExtra.wiFiStandardDisplay()` | `wifi/model/WiFiStandard.kt`, `wifi/model/WiFiSignal.kt` | `ScanResult.getWifiStandard()` |
@@ -290,16 +294,16 @@ ScannerService.wiFiData() (danh sách AP của app) ──► MainActivity.expor
 | Roam nhanh (`fast_roaming`) | `FastRoaming.find(scanResult)`, `WiFiSignalExtra.fastRoamingDisplay()` | `wifi/model/FastRoaming.kt` | `ScanResult.getInformationElements()` |
 | 802.11mc (`is_80211mc`) | `ScanResult.is80211mcResponder` | `wifi/scanner/Transformer.kt` | |
 | Hãng sản xuất (`vendor`) | `VendorService.findVendorName(bssid)` | `vendor/model/VendorService.kt` | Bảng tra OUI có sẵn trong app |
-| Cờ `connected` | `SCAN`: so sánh BSSID với `WifiInfo.getBSSID()` (`ScanLogger.log()`); Export: `WiFiIdentifier.equals()` (`CsvExport.data()`); `CONNECTION`: có BSSID hay không (`ConnectionLogger.line()`) | `wifi/logger/ScanLogger.kt`, `export/CsvExport.kt`, `wifi/logger/ConnectionLogger.kt` | |
-| Ghép một dòng `SCAN` (log và Export) | `CsvExport.row(context, date, wiFiDetail, connected, location)`, `CsvExport.data()` | `export/CsvExport.kt` | |
+| Cờ `connected` | `SCAN` (log và Export): so sánh BSSID với `WifiInfo.getBSSID()` lúc nhận kết quả quét (`ScanRecorder.rows()`); `CONNECTION`: có BSSID hay không (`ConnectionLogger.line()`) | `wifi/logger/ScanRecorder.kt`, `wifi/logger/ConnectionLogger.kt` | |
+| Ghép một dòng `SCAN` (log và Export) | `CsvExport.row(context, date, wiFiDetail, connected, location)` | `export/CsvExport.kt` | |
 | Bộ cột chung, header, giá trị thời gian / vị trí / khoảng cách | `CsvColumn`, `CSV_HEADER`, `csvRow()`, `timeValues()`, `locationValues()`, `distanceValues()` | `export/CsvRow.kt` | |
-| Vị trí (lat, lon, accuracy, altitude, speed, provider, age) | `LocationTracker.start()` → `update()` / `better()` → `current()` | `wifi/logger/LocationTracker.kt` | `LocationManagerCompat.requestLocationUpdates` (gps / network / fused, mỗi 1 s), `LocationManager.getLastKnownLocation`, `Location.getAccuracy/getAltitude/getSpeed` |
+| Vị trí (lat, lon, accuracy, altitude, speed, provider, age) | `LocationTracker.start()` (khi app ở foreground) → `update()` / `better()` → `at(t)` (bản gần `t` nhất) / `current()` | `wifi/logger/LocationTracker.kt` | `LocationManagerCompat.requestLocationUpdates` (gps / network / fused, mỗi 1 s), `LocationManager.getLastKnownLocation`, `Location.getAccuracy/getAltitude/getSpeed/getElapsedRealtimeNanos` |
 | Khoảng cách | `calculateDistance(frequency, rssi)`, `calculateDistanceLogDistance(frequency, rssi, n)` → `distanceFields()` | `wifi/model/WiFiUtils.kt`, `export/Csv.kt` | |
-| Danh sách AP cho Export | `ScannerService.wiFiData()` → `MainActivity.exportCsv(wiFiData)` | `wifi/scanner/ScannerService.kt`, `MainActivity.kt` | Dữ liệu quét đã làm mượt trong `Cache` |
-| Ghi file log | `LogFile.open()` / `write()` / `close()`. Một `LogFile` dùng chung cho `ConnectionLogger` và `ScanLogger`; cả hai ghi trên cùng một luồng nên các dòng không bị xen lẫn | `wifi/logger/LogFile.kt` | `MediaStore.Downloads` (Android 10+), `getExternalFilesDir` (Android cũ hơn) |
-| Ghi và chia sẻ file Export | `CsvShare.write()`, `CsvShare.chooser(file, saveIntent)`; lưu tùy chọn: `MainActivity.saveExport()` → `onExportCsvResult()` | `export/CsvShare.kt`, `MainActivity.kt` | `FileProvider`, `Intent.ACTION_SEND`, `ActivityResultContracts.CreateDocument` |
+| Dữ liệu cho Export | `ScanRecorder.export(target, onDone)`: BOM + header + lịch sử phiên, chạy trên luồng nền | `wifi/logger/ScanRecorder.kt`, `MainActivity.kt` | Kết quả quét thô (không dùng `Cache` làm mượt của màn hình) |
+| Ghi file log | `LogFile.open()` / `write()` / `close()`. Một `LogFile` dùng chung cho `ConnectionLogger` (luồng logger) và `ScanRecorder` (luồng ghi riêng); mọi thao tác được đồng bộ và mỗi lần ghi là một khối liền nên các dòng không bị xen lẫn | `wifi/logger/LogFile.kt` | `MediaStore.Downloads` (Android 10+), `getExternalFilesDir` (Android cũ hơn) |
+| Ghi và chia sẻ file Export | `CsvShare.prepare()`, `CsvShare.chooser(file, saveIntent)`; lưu tùy chọn: `MainActivity.saveExport()` → `onExportCsvResult()` | `export/CsvShare.kt`, `MainActivity.kt` | `FileProvider`, `Intent.ACTION_SEND`, `ActivityResultContracts.CreateDocument` |
 | Chia sẻ file của lượt đo | `MainActivity.stopRun()` → `ConnectionLogger.close(callback)` → `files()` → `MainActivity.shareRun()` → `CsvShare.chooser(uris)` | `MainActivity.kt`, `wifi/logger/ConnectionLogger.kt`, `export/CsvShare.kt` | `Intent.ACTION_SEND_MULTIPLE` (hiện chỉ có 1 file) |
-| Định dạng CSV | `csvLine()`, `csvEscape()`, `csvFormat()`, `CSV_BOM` | `export/Csv.kt` | |
+| Định dạng CSV | `csvLine()`, `csvEscape()`, `csvFormat()`, `CSV_BOM`; lọc giá trị không hợp lệ: `validRssi()`, `positiveOrNull()` | `export/Csv.kt` | |
 
 (Các đường dẫn ở bảng trên tính từ `app/src/main/kotlin/com/vrem/wifianalyzer/`.)
 
@@ -327,10 +331,10 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ./gradlew --stop
 ```
 
-**Trạng thái kiểm tra lúc bàn giao:**
-- Toàn bộ khoảng 3700 unit test đã pass ở giai đoạn trước khi thêm `ScanLogger`.
-- Sau các thay đổi cuối (gộp log thành 1 file), đã chạy lại 196 test của các nhóm liên quan (export, logger, navigation, `MainActivity`, `Transformer`, `WiFiUtils`): tất cả pass. Toàn bộ bộ test chưa được chạy lại vì giới hạn RAM.
-- ktlint và Android lint: 0 lỗi.
+**Trạng thái kiểm tra lúc bàn giao (2026-10-11, sau khi chuyển Export sang chuỗi thời gian):**
+- Toàn bộ 3763 unit test (`./gradlew testDebugUnitTest`) đều pass. Trong đó `MainRobolectricTest.scanner` (test của repo gốc, kỳ vọng app tự quét / tự chạy khi mở) đã được sửa theo hành vi của bản này: mở app nút là ▶, bấm thì thành ⏸, bấm lần nữa lại về ▶.
+- `ktlintCheck`: 0 lỗi. `lintDebug`: 0 lỗi; các cảnh báo còn lại là của repo gốc hoặc `MissingTranslation` (mục 7).
+- **Chưa** chạy lại test instrumentation (`connectedDebugAndroidTest`) và **chưa** thử bản mới trên điện thoại thật.
 - Đã thử trên vivo iQOO Z10 Turbo+ (Android 16).
 
 ---
@@ -340,9 +344,12 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - **Khoảng cách chỉ là ước lượng thô từ RSSI.** Điện thoại thử nghiệm không hỗ trợ Wi-Fi RTT (802.11mc) để đo khoảng cách thật.
 - **`connected` / `bssid` trong log nghĩa là "đã gắn vào AP"**, có thể chưa đạt `COMPLETED`. Khi phân tích, hãy lọc theo `supplicant_state`.
 - **Logger chỉ chạy khi app hiển thị trên màn hình.** Muốn ghi log khi tắt màn hình cần thêm foreground service loại `location`.
-- **Dòng đầu tiên sau khi mở file có thể mang vị trí cũ**, lấy từ `getLastKnownLocation`. Xem cột `location_age_ms`.
+- **Dòng đầu tiên sau khi mở app có thể mang vị trí cũ**, lấy từ `getLastKnownLocation`. Xem cột `location_age_ms`.
+- **Lịch sử cho Export nằm trên bộ nhớ trong** (`noBackupFilesDir/scan-history.csv`), không giới hạn dung lượng; quét dày (mỗi 5 s, ~50 BSSID) tốn khoảng 10–15 MB mỗi giờ. Lịch sử bị xóa khi tiến trình app khởi động lại.
+- **Dòng `SCAN` được sắp theo thời gian trong từng lần quét**; giữa hai lần quét liên tiếp có thể lệch nhẹ. Khi phân tích, sắp xếp theo `epoch_ms`.
+- **Định vị chạy liên tục khi app ở foreground** (để Export có vị trí cả khi không bấm Play), tốn pin hơn bản gốc.
+- **Kênh ghép 80+80 MHz** (rất hiếm): app gốc lấy tâm của đoạn 80 MHz thứ hai làm `center_frequency_mhz`, nên `range_*` chỉ mô tả đoạn đó.
 - **Trong nhà, vị trí lấy từ `network`** (sai số 10–100 m) và cập nhật khoảng mỗi 20 giây.
 - **Chuỗi mới chỉ có tiếng Anh** (lint báo `MissingTranslation`).
 - **Ở màn hình biểu đồ, nút chọn băng tần có thể nằm trong menu ⋮** vì thanh tiêu đề không đủ chỗ.
-- **`Export.kt` / `ExportIntent.kt` cũ của repo gốc vẫn còn trong mã nguồn** nhưng không còn được dùng.
 - **Quyền riêng tư:** CSV chứa tọa độ chính xác của thiết bị. `AGENTS.md` của repo gốc ghi app "không thu thập dữ liệu cá nhân"; bản này chỉ lưu dữ liệu trong máy và chỉ gửi đi khi người dùng chủ động chia sẻ. Dữ liệu đo được giữ **ngoài repo** (`~/data-wifi/`); không commit file CSV đo lên repo nếu không thật sự cần.

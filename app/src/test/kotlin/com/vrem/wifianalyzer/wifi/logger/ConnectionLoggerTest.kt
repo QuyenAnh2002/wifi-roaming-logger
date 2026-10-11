@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -28,6 +28,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -43,7 +44,7 @@ class ConnectionLoggerTest {
     private val wiFiManagerWrapper: WiFiManagerWrapper = mock()
     private val locationTracker: LocationTracker = mock()
     private val logFile: LogFile = mock()
-    private val scanLogger: ScanLogger = mock()
+    private val scanRecorder: ScanRecorder = mock()
     private val sample = LogSample("SSID", "BSSID", -50, 5180, 866, "COMPLETED")
     private val location = LogLocation(20.98765432, 105.76543210, 4.5f, 12.34, 1.25f, "fused", 250L)
     private val fixture = ConnectionLogger(mainActivity, wiFiManagerWrapper)
@@ -138,11 +139,19 @@ class ConnectionLoggerTest {
     }
 
     @Test
-    fun lineWithInvalidRssiLeavesDistancesEmpty() {
+    fun lineWithInvalidRssiLeavesRssiAndDistancesEmpty() {
         // Act
         val actual = fixture.line(1000L, listOf(LogEvent.CONNECTED), sample.copy(rssi = -127), location)
         // Assert
-        assertThat(actual).contains(",true,-127,5180,,,,,,,866,COMPLETED" + ",".repeat(12) + "20.9876543,")
+        assertThat(actual).contains(",true,,5180,,,,,,,866,COMPLETED" + ",".repeat(12) + "20.9876543,")
+    }
+
+    @Test
+    fun lineWithUnknownFrequencyAndLinkSpeedLeavesThemEmpty() {
+        // Act
+        val actual = fixture.line(1000L, listOf(LogEvent.CONNECTED), sample.copy(frequency = -1, linkSpeed = -1), null)
+        // Assert
+        assertThat(actual).contains(",true,-50,,,,,,,,,COMPLETED,,,,,,")
     }
 
     @Test
@@ -162,9 +171,30 @@ class ConnectionLoggerTest {
         assertThat(stopped).isFalse
         assertThat(restarted).isTrue
         assertThat(logger.running).isFalse
-        verify(locationTracker, times(2)).stop()
-        verify(scanLogger, times(2)).start(any())
-        verify(scanLogger, times(2)).stop()
+        verify(locationTracker, never()).start(any())
+        verify(locationTracker, never()).stop()
+    }
+
+    @Test
+    fun startWritesStartRowAndHandsFileToScanRecorder() {
+        // Arrange
+        val logger = withMocks()
+        val rows = argumentCaptor<String>()
+        whenever(logFile.opened).thenReturn(false)
+        whenever(locationTracker.current()).thenReturn(location)
+        // Act
+        logger.start()
+        idleLoggerThread()
+        logger.close()
+        idleLoggerThread()
+        // Assert
+        verify(logFile).open(CSV_HEADER)
+        verify(logFile, times(2)).write(rows.capture())
+        assertThat(rows.firstValue).contains(",CONNECTION,START,,,false,")
+        assertThat(rows.secondValue).contains(",CONNECTION,PAUSE,,,false,")
+        verify(scanRecorder).runLog = logFile
+        verify(scanRecorder, times(2)).runLog = null
+        verify(logFile).close()
     }
 
     @Test
@@ -176,8 +206,7 @@ class ConnectionLoggerTest {
         logger.close()
         // Assert
         assertThat(logger.running).isFalse
-        verify(locationTracker, never()).stop()
-        verify(scanLogger, never()).stop()
+        verify(logFile, never()).open(any())
     }
 
     @Test
@@ -198,7 +227,6 @@ class ConnectionLoggerTest {
         assertThat(received).containsExactly(logUri)
         verify(logFile).open(CSV_HEADER)
         verify(logFile).close()
-        verify(scanLogger).reset()
     }
 
     @Test
@@ -212,14 +240,11 @@ class ConnectionLoggerTest {
         assertThat(received).isEmpty()
     }
 
-    @Test
-    fun location() {
-        // Arrange
-        val logger = withMocks()
-        val location = LogLocation(21.0, 105.8, 5f, null, null, "gps", 0L)
-        whenever(locationTracker.current()).thenReturn(location)
-        // Act & Assert
-        assertThat(logger.location()).isEqualTo(location)
+    private fun idleLoggerThread() {
+        repeat(20) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(10)
+        }
     }
 
     private fun withMocks(): ConnectionLogger =
@@ -228,7 +253,7 @@ class ConnectionLoggerTest {
             wiFiManagerWrapper,
             ConnectionLogger.INTERVAL_MS,
             locationTracker,
+            scanRecorder,
             logFile,
-            scanLogger,
         )
 }

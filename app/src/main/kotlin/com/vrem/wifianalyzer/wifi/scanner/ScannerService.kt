@@ -26,6 +26,7 @@ import com.vrem.wifianalyzer.MainActivity
 import com.vrem.wifianalyzer.MainContext
 import com.vrem.wifianalyzer.permission.PermissionService
 import com.vrem.wifianalyzer.settings.Settings
+import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import com.vrem.wifianalyzer.wifi.model.WiFiData
 import kotlinx.coroutines.CoroutineScope
@@ -55,12 +56,13 @@ fun makeScannerService(
     coroutineScope: CoroutineScope,
     settings: Settings,
     configuration: Configuration,
+    scanRecorder: ScanRecorder,
 ): ScannerService {
     val cache = Cache(settings, configuration)
     val transformer = Transformer(cache)
     val scanner = Scanner(wiFiManagerWrapper, settings, permissionService, transformer)
     scanner.periodicScan = PeriodicScan(scanner, coroutineScope, settings)
-    scanner.scannerCallback = ScannerCallback(wiFiManagerWrapper, cache)
+    scanner.scannerCallback = ScannerCallback(wiFiManagerWrapper, cache, scanRecorder)
     scanner.scanResultsReceiver = ScanResultsReceiver(mainActivity, scanner.scannerCallback)
     return scanner
 }

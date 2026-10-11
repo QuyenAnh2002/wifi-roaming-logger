@@ -116,18 +116,19 @@ class MainRobolectricTest {
         assertThat(scannerMenuItem).isNotNull
         assertThat(scannerMenuItem.isVisible).isTrue
 
+        // A measurement run never starts by itself: the button offers Play until the user starts one.
         val scannerActionView = toolbar.findViewById<View>(R.id.action_scanner)
-        assertThat(scannerActionView.contentDescription).isEqualTo(pause)
-
-        activity.onOptionsItemSelected(scannerMenuItem)
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-
         assertThat(scannerActionView.contentDescription).isEqualTo(play)
 
         activity.onOptionsItemSelected(scannerMenuItem)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(scannerActionView.contentDescription).isEqualTo(pause)
+
+        activity.onOptionsItemSelected(scannerMenuItem)
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        assertThat(scannerActionView.contentDescription).isEqualTo(play)
     }
 
     @Test

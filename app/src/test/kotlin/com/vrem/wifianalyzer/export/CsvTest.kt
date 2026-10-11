@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -68,6 +68,27 @@ class CsvTest {
         assertThat(distanceFields(5500, -127)).containsExactly("", "", "", "", "")
         assertThat(distanceFields(5500, null)).containsExactly("", "", "", "", "")
         assertThat(distanceFields(null, -80)).containsExactly("", "", "", "", "")
+        assertThat(distanceFields(5500, 0)).containsExactly("", "", "", "", "")
+        assertThat(distanceFields(-1, -80)).containsExactly("", "", "", "", "")
+    }
+
+    @Test
+    fun validRssi() {
+        // Act & Assert
+        assertThat(validRssi(-1)).isEqualTo(-1)
+        assertThat(validRssi(-126)).isEqualTo(-126)
+        assertThat(validRssi(INVALID_RSSI)).isNull()
+        assertThat(validRssi(0)).isNull()
+        assertThat(validRssi(null)).isNull()
+    }
+
+    @Test
+    fun positiveOrNull() {
+        // Act & Assert
+        assertThat(positiveOrNull(2412)).isEqualTo(2412)
+        assertThat(positiveOrNull(0)).isNull()
+        assertThat(positiveOrNull(-1)).isNull()
+        assertThat(positiveOrNull(null)).isNull()
     }
 
     @Test

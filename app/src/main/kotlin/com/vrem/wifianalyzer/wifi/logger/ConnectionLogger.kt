@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -31,13 +31,16 @@ import android.os.Looper
 import androidx.annotation.RequiresApi
 import com.vrem.annotation.OpenClass
 import com.vrem.util.nullToEmpty
+import com.vrem.wifianalyzer.MainContext
 import com.vrem.wifianalyzer.export.CSV_HEADER
 import com.vrem.wifianalyzer.export.CsvColumn
 import com.vrem.wifianalyzer.export.ROW_TYPE_CONNECTION
 import com.vrem.wifianalyzer.export.csvRow
 import com.vrem.wifianalyzer.export.distanceValues
 import com.vrem.wifianalyzer.export.locationValues
+import com.vrem.wifianalyzer.export.positiveOrNull
 import com.vrem.wifianalyzer.export.timeValues
+import com.vrem.wifianalyzer.export.validRssi
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import com.vrem.wifianalyzer.wifi.model.convertSSID
 
@@ -64,14 +67,19 @@ data class LogSample(
     val state: String,
 )
 
+/**
+ * Owns the `wifi-log` file of a measurement run. Writes a `CONNECTION` row whenever the connected access point
+ * changes (polled every [intervalMs] and on network callbacks), and hands the open file to [scanRecorder] so
+ * `SCAN` rows of the run land in the same file.
+ */
 @OpenClass
 class ConnectionLogger(
     context: Context,
     private val wiFiManagerWrapper: WiFiManagerWrapper,
     private val intervalMs: Long = INTERVAL_MS,
-    private val locationTracker: LocationTracker = LocationTracker(context),
+    private val locationTracker: LocationTracker = MainContext.INSTANCE.locationTracker,
+    private val scanRecorder: ScanRecorder = MainContext.INSTANCE.scanRecorder,
     private val logFile: LogFile = LogFile(context, LOG_FILE_PREFIX),
-    private val scanLogger: ScanLogger = ScanLogger(context, wiFiManagerWrapper, locationTracker::current, logFile),
 ) {
     private val connectivityManager: ConnectivityManager =
         context.getSystemService(ConnectivityManager::class.java)
@@ -91,8 +99,10 @@ class ConnectionLogger(
 
     @Volatile
     private var active = false
+
+    // Accessed on the logger thread only.
     private var previous: LogSample? = null
-    private var pendingEvent: LogEvent? = null
+    private var logging = false
 
     val running: Boolean get() = active
 
@@ -104,9 +114,7 @@ class ConnectionLogger(
         this.handler = handler
         active = true
         handler.post(::beginLog)
-        handler.post { locationTracker.start(handler.looper) }
-        handler.post(::poll)
-        scanLogger.start(handler)
+        handler.postDelayed(::poll, intervalMs)
         runCatching { connectivityManager.registerNetworkCallback(wifiRequest, networkCallback) }
     }
 
@@ -116,8 +124,6 @@ class ConnectionLogger(
         }
         active = false
         runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
-        locationTracker.stop()
-        scanLogger.stop()
         handler?.apply {
             removeCallbacksAndMessages(null)
             post(::pauseLog)
@@ -141,8 +147,6 @@ class ConnectionLogger(
     }
 
     fun files(): List<Uri> = listOfNotNull(logFile.uri)
-
-    fun location(): LogLocation? = locationTracker.current()
 
     internal fun changes(
         previous: LogSample?,
@@ -177,9 +181,9 @@ class ConnectionLogger(
                     CsvColumn.SSID to sample?.ssid.orEmpty(),
                     CsvColumn.BSSID to sample?.bssid.orEmpty(),
                     CsvColumn.CONNECTED to (sample != null).toString(),
-                    CsvColumn.RSSI to sample?.rssi?.toString().orEmpty(),
-                    CsvColumn.FREQUENCY to sample?.frequency?.toString().orEmpty(),
-                    CsvColumn.LINK_SPEED to sample?.linkSpeed?.toString().orEmpty(),
+                    CsvColumn.RSSI to validRssi(sample?.rssi)?.toString().orEmpty(),
+                    CsvColumn.FREQUENCY to positiveOrNull(sample?.frequency)?.toString().orEmpty(),
+                    CsvColumn.LINK_SPEED to positiveOrNull(sample?.linkSpeed)?.toString().orEmpty(),
                     CsvColumn.SUPPLICANT_STATE to sample?.state.orEmpty(),
                 ) +
                 distanceValues(sample?.frequency, sample?.rssi) +
@@ -188,7 +192,7 @@ class ConnectionLogger(
 
     private fun trigger() {
         if (active) {
-            handler?.post(::sample)
+            handler?.post { sample() }
         }
     }
 
@@ -200,13 +204,12 @@ class ConnectionLogger(
         handler?.postDelayed(::poll, intervalMs)
     }
 
-    private fun sample() {
+    private fun sample(event: LogEvent? = null) {
         val current = wiFiManagerWrapper.wiFiInfo()?.takeIf { it.bssid != null }?.toLogSample()
-        val events = pendingEvent?.let { listOf(it) } ?: changes(previous, current)
+        val events = event?.let(::listOf) ?: changes(previous, current)
         if (events.isEmpty()) {
             return
         }
-        pendingEvent = null
         previous = current
         write(events, current)
     }
@@ -219,26 +222,31 @@ class ConnectionLogger(
     }
 
     private fun beginLog() {
-        if (!logFile.opened) {
-            logFile.open(CSV_HEADER)
-            pendingEvent = LogEvent.START
-        } else {
-            pendingEvent = LogEvent.RESUME
-        }
+        val event =
+            if (logFile.opened) {
+                LogEvent.RESUME
+            } else {
+                logFile.open(CSV_HEADER)
+                LogEvent.START
+            }
+        // The START / RESUME row goes in first, so every SCAN row of this stretch comes after it.
+        sample(event)
+        logging = true
+        scanRecorder.runLog = logFile
     }
 
     private fun pauseLog() {
-        if (pendingEvent == null) {
+        scanRecorder.runLog = null
+        if (logging) {
             write(listOf(LogEvent.PAUSE), previous)
+            logging = false
         }
-        pendingEvent = null
     }
 
     private fun closeLog() {
+        pauseLog()
         logFile.close()
-        scanLogger.reset()
         previous = null
-        pendingEvent = null
     }
 
     private fun WifiInfo.toLogSample(): LogSample =

@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -31,7 +31,8 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.CINNAMON_BUN])
 class LocationTrackerTest {
     private val mainActivity = RobolectricUtil.INSTANCE.mainActivity
-    private val fixture = LocationTracker(mainActivity)
+    private var nowNanos = 0L
+    private val fixture = LocationTracker(mainActivity, LocationTracker.INTERVAL_MS) { nowNanos }
 
     @Test
     fun currentWithoutLocation() {
@@ -122,9 +123,67 @@ class LocationTrackerTest {
     }
 
     @Test
+    fun currentReportsAgeOfLatestFix() {
+        // Arrange
+        fixture.update(location("gps", 5, 5f))
+        nowNanos = 7 * NANOS_PER_SECOND
+        // Act
+        val actual = fixture.current()
+        // Assert
+        assertThat(actual!!.ageMs).isEqualTo(2_000L)
+    }
+
+    @Test
+    fun atPicksFixNearestToTheObservation() {
+        // Arrange
+        fixture.update(location("gps", 1, 5f).apply { latitude = 1.0 })
+        fixture.update(location("gps", 2, 5f).apply { latitude = 2.0 })
+        fixture.update(location("gps", 3, 5f).apply { latitude = 3.0 })
+        nowNanos = 10 * NANOS_PER_SECOND
+        // Act
+        val before = fixture.at(2_200 * NANOS_PER_MILLI)
+        val after = fixture.at(2_700 * NANOS_PER_MILLI)
+        // Assert
+        assertThat(before!!.latitude).isEqualTo(2.0)
+        assertThat(before.ageMs).isEqualTo(200L)
+        assertThat(after!!.latitude).isEqualTo(3.0)
+        assertThat(after.ageMs).isEqualTo(-300L)
+    }
+
+    @Test
+    fun atKeepsFixesInTimeOrderWhenAnOlderMoreAccurateFixArrives() {
+        // Arrange
+        fixture.update(location("network", 5, 30f).apply { latitude = 5.0 })
+        // Act
+        fixture.update(location("gps", 4, 3f).apply { latitude = 4.0 })
+        // Assert
+        assertThat(fixture.at(4 * NANOS_PER_SECOND)!!.latitude).isEqualTo(4.0)
+        assertThat(fixture.at(5 * NANOS_PER_SECOND)!!.latitude).isEqualTo(5.0)
+    }
+
+    @Test
+    fun atForgetsFixesOlderThanTheHistoryWindow() {
+        // Arrange
+        fixture.update(location("gps", 0, 5f).apply { latitude = 0.5 })
+        fixture.update(location("gps", 200, 5f).apply { latitude = 200.5 })
+        // Act
+        val actual = fixture.at(0)
+        // Assert
+        assertThat(actual!!.latitude).isEqualTo(200.5)
+    }
+
+    @Test
+    fun atWithoutFix() {
+        // Act & Assert
+        assertThat(fixture.at(0)).isNull()
+    }
+
+    @Test
     fun startAndStop() {
         // Act
         fixture.start(Looper.getMainLooper())
+        fixture.start(Looper.getMainLooper())
+        fixture.stop()
         fixture.stop()
         // Assert
         assertThat(fixture.current()).isNull()
@@ -142,5 +201,6 @@ class LocationTrackerTest {
 
     companion object {
         private const val NANOS_PER_SECOND = 1_000_000_000L
+        private const val NANOS_PER_MILLI = 1_000_000L
     }
 }

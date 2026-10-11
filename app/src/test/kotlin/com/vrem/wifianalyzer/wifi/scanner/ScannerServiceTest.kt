@@ -21,6 +21,7 @@ import com.vrem.wifianalyzer.Configuration
 import com.vrem.wifianalyzer.MainActivity
 import com.vrem.wifianalyzer.permission.PermissionService
 import com.vrem.wifianalyzer.settings.Settings
+import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import kotlinx.coroutines.CoroutineScope
 import org.assertj.core.api.Assertions.assertThat
@@ -36,6 +37,7 @@ class ScannerServiceTest {
     private val coroutineScope: CoroutineScope = mock()
     private val settings: Settings = mock()
     private val configuration: Configuration = mock()
+    private val scanRecorder: ScanRecorder = mock()
 
     @After
     fun tearDown() {
@@ -45,6 +47,7 @@ class ScannerServiceTest {
         verifyNoMoreInteractions(coroutineScope)
         verifyNoMoreInteractions(settings)
         verifyNoMoreInteractions(configuration)
+        verifyNoMoreInteractions(scanRecorder)
     }
 
     @Test
@@ -58,6 +61,7 @@ class ScannerServiceTest {
                 coroutineScope,
                 settings,
                 configuration,
+                scanRecorder,
             ) as Scanner
         // Assert
         assertThat(actual.wiFiManagerWrapper).isEqualTo(wiFiManagerWrapper)

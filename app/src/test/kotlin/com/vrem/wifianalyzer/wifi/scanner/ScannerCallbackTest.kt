@@ -19,6 +19,7 @@ package com.vrem.wifianalyzer.wifi.scanner
 
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
+import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import org.junit.After
 import org.junit.Test
@@ -30,14 +31,16 @@ import org.mockito.kotlin.whenever
 class ScannerCallbackTest {
     private val wiFiManagerWrapper: WiFiManagerWrapper = mock()
     private val cache: Cache = mock()
+    private val scanRecorder: ScanRecorder = mock()
     private val scanner: Scanner = mock()
     private val wifiInfo: WifiInfo = mock()
     private val scanResults: List<ScanResult> = listOf()
-    private val fixture = ScannerCallback(wiFiManagerWrapper, cache)
+    private val fixture = ScannerCallback(wiFiManagerWrapper, cache, scanRecorder)
 
     @After
     fun tearDown() {
         verifyNoMoreInteractions(cache)
+        verifyNoMoreInteractions(scanRecorder)
         verifyNoMoreInteractions(scanner)
         verifyNoMoreInteractions(wiFiManagerWrapper)
     }
@@ -47,6 +50,7 @@ class ScannerCallbackTest {
         // Arrange
         whenever(wiFiManagerWrapper.scanResults()).thenReturn(scanResults)
         whenever(wiFiManagerWrapper.wiFiInfo()).thenReturn(wifiInfo)
+        whenever(wifiInfo.bssid).thenReturn(BSSID)
         // Act
         fixture.onSuccess()
         // Assert
@@ -54,5 +58,25 @@ class ScannerCallbackTest {
         verify(wiFiManagerWrapper).wiFiInfo()
         verify(cache).add(scanResults)
         verify(cache).wifiInfo = wifiInfo
+        verify(scanRecorder).record(scanResults, BSSID)
+    }
+
+    @Test
+    fun onSuccessWithoutConnection() {
+        // Arrange
+        whenever(wiFiManagerWrapper.scanResults()).thenReturn(scanResults)
+        whenever(wiFiManagerWrapper.wiFiInfo()).thenReturn(null)
+        // Act
+        fixture.onSuccess()
+        // Assert
+        verify(wiFiManagerWrapper).scanResults()
+        verify(wiFiManagerWrapper).wiFiInfo()
+        verify(cache).add(scanResults)
+        verify(cache).wifiInfo = null
+        verify(scanRecorder).record(scanResults, null)
+    }
+
+    private companion object {
+        const val BSSID = "aa:bb:cc:dd:ee:ff"
     }
 }

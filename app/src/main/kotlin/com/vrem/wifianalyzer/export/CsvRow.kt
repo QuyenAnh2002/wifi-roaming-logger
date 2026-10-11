@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -21,11 +21,16 @@ import com.vrem.wifianalyzer.wifi.logger.LogLocation
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 private const val TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 private const val COORDINATE_FORMAT = "%.7f"
 private const val METER_FORMAT = "%.1f"
 private const val SPEED_FORMAT = "%.2f"
+
+// SimpleDateFormat is not thread-safe and costly to build, so each writer thread reuses its own instance.
+private val TIME_FORMATTER: ThreadLocal<SimpleDateFormat> =
+    ThreadLocal.withInitial { SimpleDateFormat(TIME_FORMAT, Locale.US) }
 
 const val ROW_TYPE_CONNECTION = "CONNECTION"
 const val ROW_TYPE_SCAN = "SCAN"
@@ -86,8 +91,14 @@ fun csvRow(values: Map<CsvColumn, String>): String = csvLine(CsvColumn.entries.m
 fun timeValues(timeMs: Long): Map<CsvColumn, String> =
     mapOf(
         CsvColumn.EPOCH_MS to timeMs.toString(),
-        CsvColumn.TIME to SimpleDateFormat(TIME_FORMAT, Locale.US).format(Date(timeMs)),
+        CsvColumn.TIME to formatTime(timeMs),
     )
+
+private fun formatTime(timeMs: Long): String =
+    TIME_FORMATTER.get().run {
+        timeZone = TimeZone.getDefault()
+        format(Date(timeMs))
+    }
 
 fun distanceValues(
     frequency: Int?,

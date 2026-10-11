@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -34,10 +34,7 @@ import com.vrem.wifianalyzer.navigation.NavigationMenuController
 import com.vrem.wifianalyzer.navigation.options.OptionMenu
 import com.vrem.wifianalyzer.wifi.accesspoint.ConnectionView
 import com.vrem.wifianalyzer.wifi.logger.ConnectionLogger
-import com.vrem.wifianalyzer.wifi.model.WiFiConnection
-import com.vrem.wifianalyzer.wifi.model.WiFiData
-import com.vrem.wifianalyzer.wifi.model.WiFiDetail
-import com.vrem.wifianalyzer.wifi.model.WiFiIdentifier
+import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
@@ -52,6 +49,7 @@ import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.CINNAMON_BUN])
@@ -160,6 +158,21 @@ class MainActivityTest {
     }
 
     @Test
+    fun onResumeWithLocationStartsLocationTracker() {
+        // Arrange
+        val permissionService = MainContextHelper.INSTANCE.permissionService
+        val locationTracker = MainContextHelper.INSTANCE.locationTracker
+        MainContextHelper.INSTANCE.scannerService
+        fixture.connectionLogger = mock()
+        whenever(permissionService.permissionGranted()).thenReturn(true)
+        whenever(permissionService.locationEnabled()).thenReturn(true)
+        // Act
+        fixture.onResume()
+        // Assert
+        verify(locationTracker).start(Looper.getMainLooper())
+    }
+
+    @Test
     fun onResumeDuringRunResumesScannerAndLogger() {
         // Arrange
         val permissionService = MainContextHelper.INSTANCE.permissionService
@@ -177,27 +190,36 @@ class MainActivityTest {
     }
 
     @Test
-    fun exportCsvWritesExportFileAndOpensShareChooser() {
+    fun exportCsvSharesSessionHistory() {
         // Arrange
-        val connectionLogger: ConnectionLogger = mock()
-        fixture.connectionLogger = connectionLogger
+        val scanRecorder = withScanRecorder(true)
         fixture.csvShare = CsvShare(fixture) { Uri.parse("content://test.fileprovider/exports/" + it.name) }
-        val wiFiData = WiFiData(listOf(WiFiDetail(WiFiIdentifier("SSID1", "BSSID1"))), WiFiConnection.EMPTY)
         // Act
-        fixture.exportCsv(wiFiData)
+        fixture.exportCsv()
         // Assert
         val started = Shadows.shadowOf(fixture).nextStartedActivity
         assertThat(started.action).isEqualTo(Intent.ACTION_CHOOSER)
         val send = started.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
         assertThat(send.action).isEqualTo(Intent.ACTION_SEND)
-        assertThat(CsvShare(fixture).latest()!!.readText()).contains(",SSID1,BSSID1,false,")
-        verify(connectionLogger).location()
+        assertThat(CsvShare(fixture).latest()!!.readText()).isEqualTo(HISTORY)
+        verify(scanRecorder).export(any(), any())
+    }
+
+    @Test
+    fun exportCsvWhenHistoryCannotBeWrittenFails() {
+        // Arrange
+        withScanRecorder(false)
+        // Act
+        fixture.exportCsv()
+        // Assert
+        assertThat(Shadows.shadowOf(fixture).nextStartedActivity).isNull()
+        assertThat(ShadowToast.getTextOfLatestToast()).isEqualTo("Export not available")
     }
 
     @Test
     fun onNewIntentWithSaveExportActionOpensSaveDialog() {
         // Arrange
-        CsvShare(fixture).write("export.csv", "data")
+        CsvShare(fixture).prepare("export.csv").apply { writeText("data") }
         // Act
         fixture.onNewIntent(Intent(MainActivity.ACTION_SAVE_EXPORT))
         // Assert
@@ -209,7 +231,11 @@ class MainActivityTest {
     @Test
     fun saveExportWithoutExportFileFails() {
         // Arrange
-        CsvShare(fixture).write("export.csv", "data").parentFile!!.deleteRecursively()
+        CsvShare(fixture)
+            .prepare("export.csv")
+            .apply { writeText("data") }
+            .parentFile!!
+            .deleteRecursively()
         // Act
         fixture.saveExport()
         // Assert
@@ -222,7 +248,7 @@ class MainActivityTest {
         val uri = Uri.parse("content://export/test.csv")
         val output = ByteArrayOutputStream()
         Shadows.shadowOf(fixture.contentResolver).registerOutputStream(uri, output)
-        CsvShare(fixture).write("export.csv", "data")
+        CsvShare(fixture).prepare("export.csv").apply { writeText("data") }
         // Act
         fixture.onExportCsvResult(uri)
         // Assert
@@ -236,7 +262,11 @@ class MainActivityTest {
         val uri = Uri.parse("content://export/test.csv")
         val output = ByteArrayOutputStream()
         Shadows.shadowOf(fixture.contentResolver).registerOutputStream(uri, output)
-        CsvShare(fixture).write("export.csv", "data").parentFile!!.deleteRecursively()
+        CsvShare(fixture)
+            .prepare("export.csv")
+            .apply { writeText("data") }
+            .parentFile!!
+            .deleteRecursively()
         // Act
         fixture.onExportCsvResult(uri)
         // Assert
@@ -247,7 +277,7 @@ class MainActivityTest {
     @Test
     fun onExportCsvResultWhenCancelledKeepsExportFile() {
         // Arrange
-        val file = CsvShare(fixture).write("export.csv", "data")
+        val file = CsvShare(fixture).prepare("export.csv").apply { writeText("data") }
         // Act
         fixture.onExportCsvResult(null)
         // Assert
@@ -285,10 +315,12 @@ class MainActivityTest {
         val scannerService = MainContextHelper.INSTANCE.scannerService
         val connectionLogger: ConnectionLogger = mock()
         fixture.connectionLogger = connectionLogger
+        val locationTracker = MainContextHelper.INSTANCE.locationTracker
         // Act
         fixture.onStop()
         // Assert
         verify(connectionLogger).stop()
+        verify(locationTracker).stop()
         verify(scannerService).stop()
     }
 
@@ -567,5 +599,19 @@ class MainActivityTest {
         // Assert
         assertThat(actual).isEqualTo(navigationView)
         verify(navigationMenuController).drawerNavigationView
+    }
+
+    private fun withScanRecorder(success: Boolean): ScanRecorder {
+        val scanRecorder = MainContextHelper.INSTANCE.scanRecorder
+        whenever(scanRecorder.export(any(), any())).then {
+            (it.arguments[0] as File).writeText(HISTORY)
+            @Suppress("UNCHECKED_CAST")
+            (it.arguments[1] as (Boolean) -> Unit)(success)
+        }
+        return scanRecorder
+    }
+
+    private companion object {
+        const val HISTORY = "history"
     }
 }

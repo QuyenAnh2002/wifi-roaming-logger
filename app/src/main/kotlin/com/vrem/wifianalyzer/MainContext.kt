@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -29,12 +29,15 @@ import com.vrem.wifianalyzer.settings.Repository
 import com.vrem.wifianalyzer.settings.Settings
 import com.vrem.wifianalyzer.vendor.model.VendorService
 import com.vrem.wifianalyzer.wifi.filter.adapter.FiltersAdapter
+import com.vrem.wifianalyzer.wifi.logger.LocationTracker
+import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import com.vrem.wifianalyzer.wifi.scanner.ScannerService
 import com.vrem.wifianalyzer.wifi.scanner.makeScannerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.android.asCoroutineDispatcher
+import java.io.File
 
 enum class MainContext {
     INSTANCE,
@@ -50,6 +53,11 @@ enum class MainContext {
     lateinit var filtersAdapter: FiltersAdapter
     lateinit var coroutineScope: CoroutineScope
     val runTimer: RunTimer = RunTimer()
+
+    // Process-wide: they hold only the application context and must outlive activity recreation,
+    // so the session history and location fixes are not lost on rotation or a settings reload.
+    lateinit var locationTracker: LocationTracker
+    lateinit var scanRecorder: ScanRecorder
 
     val context: Context get() = mainActivity.applicationContext
 
@@ -68,6 +76,12 @@ enum class MainContext {
         wiFiManagerWrapper = WiFiManagerWrapper(wiFiManager)
         permissionService = PermissionService(activity)
         coroutineScope = CoroutineScope(SupervisorJob() + Handler(Looper.getMainLooper()).asCoroutineDispatcher())
+        if (!::locationTracker.isInitialized) {
+            locationTracker = LocationTracker(context)
+        }
+        if (!::scanRecorder.isInitialized) {
+            scanRecorder = ScanRecorder(context, locationTracker::at, File(context.noBackupFilesDir, SCAN_HISTORY_FILE))
+        }
         scannerService =
             makeScannerService(
                 mainActivity,
@@ -76,7 +90,12 @@ enum class MainContext {
                 coroutineScope,
                 settings,
                 configuration,
+                scanRecorder,
             )
         filtersAdapter = FiltersAdapter(settings)
+    }
+
+    private companion object {
+        const val SCAN_HISTORY_FILE = "scan-history.csv"
     }
 }

@@ -21,6 +21,8 @@ import com.vrem.wifianalyzer.permission.PermissionService
 import com.vrem.wifianalyzer.settings.Settings
 import com.vrem.wifianalyzer.vendor.model.VendorService
 import com.vrem.wifianalyzer.wifi.filter.adapter.FiltersAdapter
+import com.vrem.wifianalyzer.wifi.logger.LocationTracker
+import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import com.vrem.wifianalyzer.wifi.scanner.ScannerService
 import org.mockito.kotlin.mock
@@ -88,6 +90,20 @@ enum class MainContextHelper {
             return mainContext.wiFiManagerWrapper
         }
 
+    val scanRecorder: ScanRecorder
+        get() {
+            runCatching { saved[ScanRecorder::class.java] = mainContext.scanRecorder }
+            mainContext.scanRecorder = mock()
+            return mainContext.scanRecorder
+        }
+
+    val locationTracker: LocationTracker
+        get() {
+            runCatching { saved[LocationTracker::class.java] = mainContext.locationTracker }
+            mainContext.locationTracker = mock()
+            return mainContext.locationTracker
+        }
+
     fun restore() {
         saved.entries.forEach {
             when (it.key) {
@@ -99,6 +115,8 @@ enum class MainContextHelper {
                 Configuration::class.java -> mainContext.configuration = it.value as Configuration
                 FiltersAdapter::class.java -> mainContext.filtersAdapter = it.value as FiltersAdapter
                 WiFiManagerWrapper::class.java -> mainContext.wiFiManagerWrapper = it.value as WiFiManagerWrapper
+                ScanRecorder::class.java -> mainContext.scanRecorder = it.value as ScanRecorder
+                LocationTracker::class.java -> mainContext.locationTracker = it.value as LocationTracker
             }
         }
         saved.clear()

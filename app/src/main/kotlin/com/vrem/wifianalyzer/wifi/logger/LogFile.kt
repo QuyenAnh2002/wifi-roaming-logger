@@ -2,7 +2,7 @@
  * WiFiAnalyzer
  * Copyright (C) 2015 - 2026 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software:  you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -36,6 +36,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * One CSV file in `Download/WiFiAnalyzer`. Connection rows and scan rows are written from different threads,
+ * so every operation is synchronized and each [write] call lands as one uninterrupted block.
+ */
 @OpenClass
 class LogFile(
     private val context: Context,
@@ -43,25 +47,32 @@ class LogFile(
 ) {
     private var writer: Writer? = null
 
+    @Volatile
     private var currentUri: Uri? = null
 
     val uri: Uri? get() = currentUri
 
-    val opened: Boolean get() = writer != null
+    val opened: Boolean
+        @Synchronized get() = writer != null
 
+    @Synchronized
     fun open(header: String) {
         currentUri = null
         writer = runCatching { outputStream(fileName()) }.getOrNull()?.bufferedWriter(Charsets.UTF_8)
         write(CSV_BOM + header)
     }
 
+    @Synchronized
     fun write(text: String) {
-        writer?.apply {
-            write(text)
-            flush()
+        val writer = writer ?: return
+        // Storage can fill up or be revoked mid-run; losing a row must not crash the measurement.
+        runCatching {
+            writer.write(text)
+            writer.flush()
         }
     }
 
+    @Synchronized
     fun close() {
         runCatching { writer?.close() }
         writer = null
