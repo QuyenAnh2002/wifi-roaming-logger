@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below, together with the
+  original WiFiAnalyzer listed under references.
+type: software
+title: "WiFiAnalyzer (modified version): Wi-Fi scan, connection, location and Wi-Fi RTT logging to CSV"
+abstract: >-
+  A modified version of WiFiAnalyzer 3.3.1, an open-source Android Wi-Fi
+  analyzer. It records the current connection, every scanned BSSID, the
+  device location and Wi-Fi RTT (IEEE 802.11mc/802.11az) distance
+  measurements over time into CSV files.
+authors:
+  - alias: QuyenAnh2002
+  - family-names: Pham
+    given-names: Anh Dung
+repository-code: "https://github.com/QuyenAnh2002/mobility-project"
+license: GPL-3.0-or-later
+keywords:
+  - Wi-Fi
+  - Android
+  - Wi-Fi RTT
+  - IEEE 802.11mc
+  - RSSI
+  - indoor positioning
+references:
+  - type: software
+    title: WiFiAnalyzer
+    authors:
+      - name: VREM Software Development
+    version: 3.3.1
+    repository-code: "https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer"
+    url: "https://vremsoftwaredevelopment.github.io/WiFiAnalyzer/"
+    license: GPL-3.0-or-later
