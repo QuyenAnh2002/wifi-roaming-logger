@@ -1,53 +1,53 @@
-# WiFiAnalyzer – bản sửa đổi (ghi log CSV, vị trí, Wi-Fi RTT)
+# WiFiAnalyzer – modified version (CSV logging, location, Wi-Fi RTT)
 
-> **Đây không phải repo chính thức của WiFiAnalyzer.** Đây là bản sửa đổi (modified version) của [WiFiAnalyzer](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer), một phần mềm mã nguồn mở của VREM Software Development, phát hành theo giấy phép [GNU GPLv3](LICENSE). Bản này không do tác giả gốc phát hành, xác nhận hay hỗ trợ. Lỗi của bản này hãy báo ở repo này, đừng gửi lên repo gốc.
+> **This is not the official WiFiAnalyzer repository.** It is a modified version of [WiFiAnalyzer](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer), open-source software by VREM Software Development, released under the [GNU GPLv3](LICENSE). This version is not released, endorsed or supported by the original authors. Please report problems with this version here, not to the original repository.
 
-Bản này giữ nguyên các chức năng phân tích Wi-Fi của bản gốc. Ngoài ra, nó ghi lại theo thời gian kết nối hiện tại, mọi BSSID quét thấy, vị trí thiết bị và khoảng cách đo bằng Wi-Fi RTT vào file CSV, rồi chia sẻ file qua bảng chia sẻ của Android.
+This version keeps all Wi-Fi analysis features of the original. In addition, it records the current connection, every scanned BSSID, the device location and Wi-Fi RTT distance measurements over time into CSV files, and shares those files through the Android share sheet.
 
-**Lưu ý:** cũng như bản gốc, WiFiAnalyzer không phải công cụ dò mật khẩu hay lừa đảo (phishing) Wi-Fi.
+**Note:** like the original, WiFiAnalyzer is not a Wi-Fi password cracking or phishing tool.
 
-## Mục lục
+## Table of Contents
 
-1. [Nguồn gốc](#1-nguồn-gốc)
-2. [Giấy phép](#2-giấy-phép)
-3. [Quyền riêng tư](#3-quyền-riêng-tư)
-4. [Thay đổi so với bản gốc](#4-thay-đổi-so-với-bản-gốc)
-5. [Build và kiểm tra](#5-build-và-kiểm-tra)
-6. [Hạn chế đã biết](#6-hạn-chế-đã-biết)
+1. [Origin](#1-origin)
+2. [License](#2-license)
+3. [Privacy](#3-privacy)
+4. [Changes from the original](#4-changes-from-the-original)
+5. [Build and test](#5-build-and-test)
+6. [Known limitations](#6-known-limitations)
 
-Cách dùng trên điện thoại và định dạng file CSV: [CSV_FORMAT.md](CSV_FORMAT.md).
+Using the app on a phone and the CSV file format: [CSV_FORMAT.md](CSV_FORMAT.md).
 
 ---
 
-## 1. Nguồn gốc
+## 1. Origin
 
 | | |
 |---|---|
-| Dự án gốc | [VREMSoftwareDevelopment/WiFiAnalyzer](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer) |
-| Tác giả gốc | VREM Software Development và [những người đóng góp](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer/graphs/contributors) cho repo gốc |
-| Phiên bản gốc | WiFiAnalyzer 3.3.1 (versionCode 72), commit [`7e2019d`](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer/commit/7e2019d294d4ac40b70e770d9e2c55fdc1b18281) ngày 2026-10-03 ("Fix instrumented tests") |
-| Người sửa đổi | QuyenAnh2002 và Pham Anh Dung, tháng 10–11/2026 (mục 4 và lịch sử git của repo này) |
-| Giấy phép | GNU GPL phiên bản 3 hoặc mới hơn, giống bản gốc (mục 2) |
-| Package bản debug | `com.vrem.wifianalyzer.BETA`, logo xám, cài song song được với app gốc |
+| Original project | [VREMSoftwareDevelopment/WiFiAnalyzer](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer) |
+| Original authors | VREM Software Development and the [contributors](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer/graphs/contributors) to the original repository |
+| Original version | WiFiAnalyzer 3.3.1 (versionCode 72), commit [`7e2019d`](https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer/commit/7e2019d294d4ac40b70e770d9e2c55fdc1b18281) of 2026-10-03 ("Fix instrumented tests") |
+| Modified by | QuyenAnh2002 and Pham Anh Dung, October–November 2026 (section 4 and the git history of this repository) |
+| License | GNU GPL version 3 or later, same as the original (section 2) |
+| Debug package | `com.vrem.wifianalyzer.BETA` with a grey icon, installable side by side with the original app |
 
-Lịch sử git của repo này bắt đầu từ commit `a946ef0` (2026-10-10). Commit đó gồm mã nguồn gốc ở commit `7e2019d` và các thay đổi đầu tiên, nên repo này không chứa lịch sử của repo gốc. Để xem chính xác mọi khác biệt so với bản gốc:
+The git history of this repository starts at commit `a946ef0` (2026-10-10). That commit contains the original source at commit `7e2019d` plus the first changes, so this repository does not include the history of the original repository. To see every difference from the original:
 
 ```bash
 git fetch --depth=1 https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer.git 7e2019d294d4ac40b70e770d9e2c55fdc1b18281
 git diff --stat FETCH_HEAD HEAD
 ```
 
-**Trích dẫn:** thông tin trích dẫn bản này nằm trong [CITATION.cff](CITATION.cff); GitHub hiển thị nó qua nút "Cite this repository". Khi dùng bản này trong bài báo, hãy trích dẫn cả WiFiAnalyzer gốc (đã khai báo trong mục `references` của file đó).
+**Citation:** citation metadata for this version is in [CITATION.cff](CITATION.cff); GitHub shows it through the "Cite this repository" button. When you use this version in a paper, please also cite the original WiFiAnalyzer (listed under `references` in that file).
 
-Các file `USER_MANUAL.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md` là tài liệu của repo gốc (giữ nguyên), mô tả các chức năng gốc của app. Hướng dẫn đóng góp và link báo lỗi trong đó trỏ tới repo gốc: chỉ gửi lên đó những lỗi xảy ra cả trên app gốc.
+`USER_MANUAL.md`, `CONTRIBUTING.md`, `SECURITY.md` and `AGENTS.md` are documents of the original repository (kept unchanged) and describe the original features of the app. The contribution guide and bug report links in them point to the original repository: report a problem there only if it also happens with the original app.
 
 ---
 
-## 2. Giấy phép
+## 2. License
 
 [<img src="https://www.gnu.org/graphics/gplv3-127x51.png" alt="GPLv3">](https://www.gnu.org/licenses/gpl-3.0.html)
 
-WiFiAnalyzer được phát hành theo GNU General Public License v3.0 (GPLv3), và bản sửa đổi này cũng vậy. Toàn bộ mã nguồn trong repo, kể cả phần mới viết, được phát hành theo GPL phiên bản 3 hoặc (tùy bạn chọn) bất kỳ phiên bản nào mới hơn, không kèm điều khoản bổ sung nào. Toàn văn giấy phép nằm trong file [LICENSE](LICENSE), giống hệt file của repo gốc.
+WiFiAnalyzer is licensed under the GNU General Public License v3.0 (GPLv3), and so is this modified version. All source code in this repository, including the newly written code, is released under the GPL version 3 or (at your option) any later version, with no additional terms. The full license text is in [LICENSE](LICENSE), identical to the file in the original repository.
 
 ```
 WiFiAnalyzer (modified version)
@@ -68,18 +68,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 ```
 
-### 2.1. Cách bản này đáp ứng các yêu cầu chính của GPLv3
+### 2.1. How this version meets the key GPLv3 requirements
 
-README của repo gốc nêu 4 yêu cầu chính của GPLv3. Bản này đáp ứng như sau:
+The README of the original repository lists four key GPLv3 requirements. This version meets them as follows:
 
-| Yêu cầu | Nội dung (điều khoản GPLv3) | Bản này |
+| Requirement | What it means (GPLv3 clause) | This version |
 |---|---|---|
-| **Disclose Source** – công bố mã nguồn | Ai nhận được bản chạy (APK) cũng phải nhận được toàn bộ mã nguồn tương ứng, kể cả script build (mục 1, 6) | Toàn bộ mã nguồn và script build nằm trong repo này. Repo hiện để **private**, nên phải làm theo mục 2.2 trước khi đưa APK cho người khác |
-| **License and Copyright Notice** – giữ giấy phép và thông báo bản quyền | Giữ nguyên giấy phép, các thông báo bản quyền và thông báo không bảo hành của tác giả gốc; giao diện tương tác phải hiển thị các thông báo đó (mục 4, 5d) | Giữ nguyên `LICENSE` và header bản quyền của VREM Software Development trong mọi file, kể cả file mới. Màn hình **About** của app vẫn hiển thị bản quyền và toàn văn GPLv3, cùng giấy phép Apache 2.0 của các thư viện bên thứ ba (bản này không thêm thư viện mới) |
-| **Same License** – cùng giấy phép | Toàn bộ bản sửa đổi phải phát hành theo GPLv3, không thêm hạn chế nào cho người nhận (mục 5c, 10) | Toàn bộ repo theo GPLv3 hoặc mới hơn, không có điều khoản bổ sung |
-| **State Changes** – ghi rõ thay đổi | Bản sửa đổi phải có thông báo rõ ràng rằng đã bị sửa, kèm thời điểm sửa (mục 5a) | Mục 4 của README này tóm tắt các thay đổi so với commit gốc; lệnh `git diff` ở mục 1 cho danh sách file chính xác. Header của mỗi file `.kt` / `.xml` đã sửa hoặc thêm có hai dòng ghi chú ngay dưới dòng bản quyền gốc (ví dụ bên dưới). Lịch sử git ghi lại từng thay đổi kèm ngày |
+| **Disclose Source** | Anyone who receives a build (APK) must also be able to get the complete corresponding source code, including build scripts (clauses 1, 6) | All source code and build scripts are in this repository. The repository is currently **private**, so follow section 2.2 before giving an APK to anyone |
+| **License and Copyright Notice** | Keep the license, the copyright notices and the no-warranty notices of the original authors intact; interactive user interfaces must display them (clauses 4, 5d) | `LICENSE` and the VREM Software Development copyright header are kept in every file, including new files. The app's **About** screen still shows the copyright notice and the full GPLv3 text, together with the Apache 2.0 license of the third-party libraries (this version adds no new libraries) |
+| **Same License** | The whole modified version must be released under the GPLv3, with no further restrictions on recipients (clauses 5c, 10) | The whole repository is GPLv3 or later, with no additional terms |
+| **State Changes** | A modified version must carry prominent notices stating that it was modified, with a relevant date (clause 5a) | Section 4 of this README summarizes the changes from the original commit; the `git diff` command in section 1 gives the exact list of files. The header of every added or modified `.kt` / `.xml` file has two notice lines right below the original copyright line (example below). The git history records each change with its date |
 
-Header của một file gốc đã sửa:
+Header of a modified original file:
 
 ```kotlin
 /*
@@ -93,60 +93,60 @@ Header của một file gốc đã sửa:
  */
 ```
 
-File mới thêm dùng hai dòng `Copyright (C) 2026 QuyenAnh2002, Pham Anh Dung` và `Added in 2026 to this modified version of WiFiAnalyzer; see README.md`. File XML dùng cùng nội dung, với tiền tố `~` thay cho `*`. Ảnh PNG (logo xám của bản debug) không có header; chúng được nêu ở mục 4.
+New files use the two lines `Copyright (C) 2026 QuyenAnh2002, Pham Anh Dung` and `Added in 2026 to this modified version of WiFiAnalyzer; see README.md`. XML files use the same text with a `~` prefix instead of `*`. PNG images (the grey debug icon) have no header; they are mentioned in section 4.
 
-**Khi sửa tiếp:** thêm hai dòng tương ứng vào header của file gốc vừa sửa lần đầu hoặc file mới, và cập nhật mục 4 (cùng [CSV_FORMAT.md](CSV_FORMAT.md) nếu định dạng CSV thay đổi). Script `scripts/check-license-headers.sh` (chạy trong CI) chỉ kiểm tra header có dòng của VREM và dòng GPL, nên sẽ không báo lỗi khi thiếu hai dòng ghi chú này.
+**When making further changes:** add the matching two lines to the header of every original file you modify for the first time and of every new file, and update section 4 (and [CSV_FORMAT.md](CSV_FORMAT.md) if the CSV format changes). `scripts/check-license-headers.sh` (run in CI) only checks for the VREM line and the GPL line, so it will not catch a missing notice.
 
-### 2.2. Khi đưa APK cho người khác
+### 2.2. Before giving an APK to others
 
-Nếu chỉ dùng nội bộ, không đưa bản build cho ai, GPLv3 không đòi hỏi gì thêm. Khi đưa APK (hoặc bất kỳ bản build nào) cho người khác, kể cả miễn phí:
+As long as builds are only used internally and not given to anyone, the GPLv3 requires nothing more. When you give an APK (or any other build) to someone else, even free of charge:
 
-1. **Kèm mã nguồn tương ứng** với đúng bản build đó (đúng commit đã dùng để build), theo một trong các cách ở mục 6 của GPLv3. Ví dụ: gửi kèm mã nguồn cùng APK, hoặc ghi link tải mã nguồn ngay cạnh link tải APK. Repo này đang để **private**, nên chỉ đưa link repo là **chưa đủ**: phải chuyển repo sang public, hoặc gửi kèm mã nguồn, ví dụ:
+1. **Provide the corresponding source code** for exactly that build (the commit it was built from), in one of the ways listed in clause 6 of the GPLv3. For example, ship the source together with the APK, or put a source download link right next to the APK download link. This repository is currently **private**, so a link to it is **not enough**: either make the repository public or ship the source, for example:
    ```bash
    git archive --format=zip -o wifianalyzer-src.zip HEAD
    ```
-2. **Kèm giấy phép:** người nhận phải nhận được bản GPLv3. File `LICENSE` có trong mã nguồn, và màn hình About của app cũng hiển thị giấy phép này.
-3. **Không thêm hạn chế** lên quyền của người nhận (cấm chia sẻ lại, cấm sửa, bắt ký thỏa thuận riêng…).
-4. **Không để người nhận nhầm với app chính thức.** GPLv3 không bắt đổi tên, nhưng bản release của repo này vẫn dùng package `com.vrem.wifianalyzer` và tên "WiFiAnalyzer" của app gốc trên Google Play và F-Droid. Không đăng bản release lên các cửa hàng đó. Nếu cần phát hành rộng rãi, hãy đổi `applicationId` và tên app trước. Màn hình About vẫn ghi tên công ty và link trang chủ của bản gốc. Mã SHA-256 trong `SECURITY.md` là chữ ký của bản phát hành chính thức, nên APK build từ repo này sẽ không khớp.
+2. **Include the license:** recipients must receive a copy of the GPLv3. The `LICENSE` file is part of the source, and the app's About screen also shows the license.
+3. **Add no restrictions** on the recipients' rights (no ban on redistribution or modification, no separate agreement to sign, …).
+4. **Do not let recipients mistake it for the official app.** The GPLv3 does not require a new name, but the release build of this repository still uses the package `com.vrem.wifianalyzer` and the name "WiFiAnalyzer" of the original app on Google Play and F-Droid. Do not publish the release build to those stores. If wide distribution is needed, change the `applicationId` and the app name first. The About screen still shows the company name and home page link of the original. The SHA-256 fingerprint in `SECURITY.md` belongs to the official releases, so APKs built from this repository will not match it.
 
 ---
 
-## 3. Quyền riêng tư
+## 3. Privacy
 
-Bản gốc không thu thập thông tin cá nhân và không cần quyền Internet. So với bản gốc:
+The original app does not collect personal information and does not need Internet access. Compared with the original:
 
-- Bản này vẫn **không xin quyền Internet** và không tự gửi dữ liệu đi đâu. Dữ liệu chỉ rời máy khi người dùng tự bấm chia sẻ.
-- **File CSV chứa dữ liệu nhạy cảm:** tọa độ chính xác của điện thoại theo thời gian, cùng SSID / BSSID của các mạng xung quanh. Hãy cân nhắc trước khi chia sẻ file.
-- Dữ liệu nằm ở `Download/WiFiAnalyzer/` (file log của từng lượt đo, giữ lại cho đến khi người dùng xóa) và `noBackupFilesDir/scan-history.csv` (lịch sử cho Export, xóa khi tiến trình app khởi động lại).
-- Quyền mới: `ACCESS_NETWORK_STATE` (theo dõi thay đổi kết nối). Khi bấm Play, app xin thêm quyền `NEARBY_WIFI_DEVICES` (đã khai báo sẵn ở bản gốc) để đo RTT trên Android 13+.
-- Dữ liệu đo ở trường được giữ **ngoài repo** (`~/data-wifi/`). Đừng commit file CSV đo được lên repo nếu không thật sự cần.
-
----
-
-## 4. Thay đổi so với bản gốc
-
-So với WiFiAnalyzer 3.3.1 (commit `7e2019d`), bản này:
-
-- **Export CSV:** thay việc chia sẻ văn bản phân cách bằng `|` bằng một file `.csv` 41 cột chứa mọi lần quét từ lúc mở app, chia sẻ qua bảng chia sẻ Android hoặc lưu ra file. `Export.kt` và `ExportIntent.kt` của bản gốc đã bị xóa, thay bằng `CsvExport.kt` và `CsvShare.kt`.
-- **Ghi log theo lượt đo:** nút Play / Pause (ở bản gốc chỉ tạm dừng quét) giờ bắt đầu và kết thúc một lượt đo. Mỗi lượt đo ghi một file `wifi-log-*.csv` gồm các dòng `CONNECTION` (kết nối hiện tại, đọc mỗi giây), `SCAN` (mỗi BSSID quét thấy) và `RTT`. Bấm Pause thì đóng file và mở bảng chia sẻ. Cạnh nút có bộ đếm thời gian lượt đo.
-- **Vị trí thiết bị** (GPS / network / fused) được gắn vào từng dòng CSV.
-- **Khoảng cách ước lượng:** thêm mô hình log-distance (n = 2; 2,5; 3; 3,5) bên cạnh FSPL của bản gốc.
-- **Wi-Fi RTT:** đo khoảng cách tới các AP hỗ trợ 802.11mc / 802.11az mỗi giây (đo one-sided với AP thường trên Android 14+). Màn hình chi tiết AP hiện thêm `RTT x.xm`.
-- **Bản debug** dùng logo xám (`app/src/debug/res/`) để không nhầm với app gốc.
-- **Manifest:** thêm quyền `ACCESS_NETWORK_STATE` và khai báo `FileProvider`.
-
-Cách dùng trên điện thoại, ý nghĩa từng cột CSV và các hàm sinh ra dữ liệu được mô tả trong [CSV_FORMAT.md](CSV_FORMAT.md). Danh sách file chính xác đã thêm / sửa / xóa: chạy lệnh `git diff` ở mục 1.
+- This version still **does not request Internet access** and never sends data anywhere by itself. Data only leaves the device when the user shares it.
+- **The CSV files contain sensitive data:** the precise location of the phone over time, plus the SSIDs / BSSIDs of nearby networks. Think before sharing them.
+- Data is stored in `Download/WiFiAnalyzer/` (one log file per measurement run, kept until the user deletes it) and in `noBackupFilesDir/scan-history.csv` (history for Export, cleared when the app process restarts).
+- New permission: `ACCESS_NETWORK_STATE` (to follow connection changes). When Play is pressed, the app also requests `NEARBY_WIFI_DEVICES` (already declared by the original) to measure RTT on Android 13+.
+- Field measurement data is kept **outside the repository** (`~/data-wifi/`). Do not commit measured CSV files unless really needed.
 
 ---
 
-## 5. Build và kiểm tra
+## 4. Changes from the original
 
-**Yêu cầu:** JDK 21, Android SDK với `platforms;android-37.0` và `build-tools;37.0.0`. Khai báo đường dẫn SDK trong `local.properties` (file này đã nằm trong `.gitignore`):
+Compared with WiFiAnalyzer 3.3.1 (commit `7e2019d`), this version:
+
+- **CSV export:** replaces sharing `|`-separated text with a 41-column `.csv` file holding every scan since the app was opened, shared through the Android share sheet or saved to a file. The original `Export.kt` and `ExportIntent.kt` were removed and replaced by `CsvExport.kt` and `CsvShare.kt`.
+- **Logging per measurement run:** the Play / Pause button (which only paused scanning in the original) now starts and ends a measurement run. Each run writes one `wifi-log-*.csv` file with `CONNECTION` rows (current connection, read every second), `SCAN` rows (one per scanned BSSID) and `RTT` rows. Pressing Pause closes the file and opens the share sheet. A run timer is shown next to the button.
+- **Device location** (GPS / network / fused) is attached to every CSV row.
+- **Estimated distance:** adds the log-distance model (n = 2, 2.5, 3, 3.5) next to the original FSPL estimate.
+- **Wi-Fi RTT:** measures the distance to access points that support 802.11mc / 802.11az every second (one-sided ranging to other APs on Android 14+). The AP detail view also shows `RTT x.xm`.
+- **Debug build** uses a grey icon (`app/src/debug/res/`) so it is not mistaken for the original app.
+- **Manifest:** adds the `ACCESS_NETWORK_STATE` permission and a `FileProvider`.
+
+Using the app on a phone, the meaning of each CSV column and the functions that produce the data are described in [CSV_FORMAT.md](CSV_FORMAT.md). For the exact list of added / modified / deleted files, run the `git diff` command in section 1.
+
+---
+
+## 5. Build and test
+
+**Requirements:** JDK 21 and the Android SDK with `platforms;android-37.0` and `build-tools;37.0.0`. Set the SDK path in `local.properties` (already in `.gitignore`):
 ```properties
 sdk.dir=/home/<user>/Android/Sdk
 ```
 
-**Lệnh:**
+**Commands:**
 ```bash
 ./gradlew assembleDebug          # APK: app/build/outputs/apk/debug/app-debug.apk
 ./gradlew ktlintCheck
@@ -155,34 +155,34 @@ sdk.dir=/home/<user>/Android/Sdk
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-**Máy ít RAM:** cấu hình mặc định cho phép tới 4 tiến trình test chạy song song (mỗi tiến trình 2 GB heap). Trên máy 14 GB RAM đang mở nhiều ứng dụng, chạy toàn bộ test có thể làm treo máy. Nên giới hạn:
+**Machines with little RAM:** by default up to 4 test processes run in parallel (2 GB heap each). On a 14 GB machine with many other applications open, running the full test suite can freeze the machine. Limit it:
 ```bash
 ./gradlew --max-workers=2 -Dorg.gradle.jvmargs="-Xmx3g -XX:MaxMetaspaceSize=1g" -Pkotlin.compiler.execution.strategy=in-process testDebugUnitTest
 ./gradlew --stop
 ```
 
-**Trạng thái kiểm tra lúc bàn giao (2026-10-11, sau khi chuyển Export sang chuỗi thời gian):**
-- Toàn bộ 3763 unit test (`./gradlew testDebugUnitTest`) đều pass. Trong đó `MainRobolectricTest.scanner` (test của repo gốc, kỳ vọng app tự quét / tự chạy khi mở) đã được sửa theo hành vi của bản này: mở app nút là ▶, bấm thì thành ⏸, bấm lần nữa lại về ▶.
-- `ktlintCheck`: 0 lỗi. `lintDebug`: 0 lỗi; các cảnh báo còn lại là của repo gốc hoặc `MissingTranslation` (mục 6).
-- **Chưa** chạy lại test instrumentation (`connectedDebugAndroidTest`) và **chưa** thử bản mới trên điện thoại thật.
-- Đã thử trên vivo iQOO Z10 Turbo+ (Android 16).
+**Test status at handover (2026-10-11, after Export was switched to a time series):**
+- All 3763 unit tests (`./gradlew testDebugUnitTest`) pass. Among them, `MainRobolectricTest.scanner` (an original test that expected the app to start scanning / running when opened) was updated to the behavior of this version: when the app opens the button shows ▶, pressing it shows ⏸, pressing it again shows ▶.
+- `ktlintCheck`: 0 errors. `lintDebug`: 0 errors; the remaining warnings come from the original repository or are `MissingTranslation` (section 6).
+- The instrumented tests (`connectedDebugAndroidTest`) have **not** been rerun, and the new version has **not** been tried on a real phone.
+- Tested on a vivo iQOO Z10 Turbo+ (Android 16).
 
 ---
 
-## 6. Hạn chế đã biết
+## 6. Known limitations
 
-- **RTT chỉ đo được với AP hỗ trợ 802.11mc/802.11az** (cột `is_80211mc = true`). Trong dữ liệu đã đo ở trường, **không AP nào** hỗ trợ 802.11mc, nên ở đó sẽ không có dòng `RTT` và khoảng cách vẫn chỉ là ước lượng từ RSSI. Muốn có RTT cần AP bật FTM responder (ví dụ Google/Nest Wifi, AP doanh nghiệp bật FTM, hoặc PC Linux có card Intel AX200/AX210 chạy `hostapd` với `ftm_responder=1`).
-- **RTT cần quyền "Thiết bị ở gần" (`NEARBY_WIFI_DEVICES`)** trên Android 13+; app xin quyền này khi bấm Play. Nếu từ chối, app vẫn chạy nhưng không đo RTT.
-- **Android hạn chế RTT khi app ở nền**, nên vòng đo RTT dừng khi app không hiển thị.
-- **`connected` / `bssid` trong log nghĩa là "đã gắn vào AP"**, có thể chưa đạt `COMPLETED`. Khi phân tích, hãy lọc theo `supplicant_state`.
-- **Logger chỉ chạy khi app hiển thị trên màn hình.** Muốn ghi log khi tắt màn hình cần thêm foreground service loại `location`.
-- **Dòng đầu tiên sau khi mở app có thể mang vị trí cũ**, lấy từ `getLastKnownLocation`. Xem cột `location_age_ms`.
-- **Lịch sử cho Export nằm trên bộ nhớ trong** (`noBackupFilesDir/scan-history.csv`), không giới hạn dung lượng; quét dày (mỗi 5 s, ~50 BSSID) tốn khoảng 10–15 MB mỗi giờ. Lịch sử bị xóa khi tiến trình app khởi động lại.
-- **Dòng `SCAN` được sắp theo thời gian trong từng lần quét**; giữa hai lần quét liên tiếp có thể lệch nhẹ. Khi phân tích, sắp xếp theo `epoch_ms`.
-- **Định vị chạy liên tục khi app ở foreground** (để Export có vị trí cả khi không bấm Play), tốn pin hơn bản gốc.
-- **Kênh ghép 80+80 MHz** (rất hiếm): app gốc lấy tâm của đoạn 80 MHz thứ hai làm `center_frequency_mhz`, nên `range_*` chỉ mô tả đoạn đó.
-- **Trong nhà, vị trí lấy từ `network`** (sai số 10–100 m) và cập nhật khoảng mỗi 20 giây.
-- **Chuỗi mới chỉ có tiếng Anh** (lint báo `MissingTranslation`).
-- **Ở màn hình biểu đồ, nút chọn băng tần có thể nằm trong menu ⋮** vì thanh tiêu đề không đủ chỗ.
-- **Màn hình About vẫn là của bản gốc:** tên công ty, link trang chủ, FAQ và chính sách quyền riêng tư trỏ tới WiFiAnalyzer gốc, chưa nói rằng đây là bản sửa đổi hay mã nguồn của bản này ở đâu (xem mục 2.2).
-- **Quyền riêng tư:** xem mục 3.
+- **RTT only works with APs that support 802.11mc/802.11az** (column `is_80211mc = true`). In the field data collected so far, **no AP** supports 802.11mc, so there are no `RTT` rows there and distance is still only estimated from RSSI. RTT needs an AP with an FTM responder enabled (for example Google/Nest Wifi, an enterprise AP with FTM enabled, or a Linux PC with an Intel AX200/AX210 card running `hostapd` with `ftm_responder=1`).
+- **RTT needs the "Nearby devices" permission (`NEARBY_WIFI_DEVICES`)** on Android 13+; the app requests it when Play is pressed. If it is denied, the app still works but does not measure RTT.
+- **Android restricts RTT for background apps**, so the RTT loop stops while the app is not visible.
+- **`connected` / `bssid` in the log mean "associated with an AP"**, which may not have reached `COMPLETED` yet. Filter by `supplicant_state` when analyzing.
+- **The logger only runs while the app is visible on screen.** Logging with the screen off would need a foreground service of type `location`.
+- **The first row after opening the app may carry a stale location** taken from `getLastKnownLocation`. Check the `location_age_ms` column.
+- **The history for Export is kept in internal storage** (`noBackupFilesDir/scan-history.csv`) with no size limit; frequent scanning (every 5 s, ~50 BSSIDs) uses about 10–15 MB per hour. The history is cleared when the app process restarts.
+- **`SCAN` rows are ordered by time within each scan**; rows of two consecutive scans may overlap slightly. Sort by `epoch_ms` when analyzing.
+- **Location updates run continuously while the app is in the foreground** (so that Export has locations even without pressing Play), which uses more battery than the original.
+- **80+80 MHz channels** (very rare): the original app uses the center of the second 80 MHz segment as `center_frequency_mhz`, so `range_*` only describes that segment.
+- **Indoors, the location comes from `network`** (10–100 m error) and updates roughly every 20 seconds.
+- **New strings are English only** (lint reports `MissingTranslation`).
+- **On the graph screens, the band selector may be in the ⋮ menu** because the title bar is too narrow.
+- **The About screen is still the original one:** the company name, home page, FAQ and privacy policy links point to the original WiFiAnalyzer, and it does not say that this is a modified version or where its source code is (see section 2.2).
+- **Privacy:** see section 3.
