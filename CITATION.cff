@@ -13,7 +13,7 @@ authors:
   - alias: QuyenAnh2002
   - family-names: Pham
     given-names: Anh Dung
-repository-code: "https://github.com/QuyenAnh2002/mobility-project"
+repository-code: "https://github.com/QuyenAnh2002/wifi-roaming-logger"
 license: GPL-3.0-or-later
 keywords:
   - Wi-Fi
