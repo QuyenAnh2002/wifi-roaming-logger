@@ -78,7 +78,7 @@ class CsvExportTest {
         assertThat(actual).startsWith("${date.time},2026-10-10T09:08:07.000")
         assertThat(actual).endsWith(
             ",SCAN,,\"Lab, 2\",78:20:51:fe:3b:e9,true,-30,5745,149,155,5775,80,5735,5815,,," +
-                "0.1,0.1,0.2,0.3,0.3,$standard,$securities,[WPA2-PSK-CCMP][ESS],$fastRoaming,true,TP-LINK," +
+                "0.1,0.1,0.2,0.3,0.3,,,,,,,$standard,$securities,[WPA2-PSK-CCMP][ESS],$fastRoaming,true,TP-LINK," +
                 "20.9876543,105.7654321,4.5,,,gps,250\r\n",
         )
     }
@@ -94,7 +94,7 @@ class CsvExportTest {
         // Assert
         assertThat(actual).endsWith(
             ",SCAN,,*hidden*,56:3a:0e:32:4e:99,false,-70,2437,6,6,2437,20,2427,2447,,," +
-                "30.9,30.9,15.6,9.9,7.1,$standard,$securities,[ESS],,false,," +
+                "30.9,30.9,15.6,9.9,7.1,,,,,,,$standard,$securities,[ESS],,false,," +
                 "20.9876543,105.7654321,4.5,,,gps,250\r\n",
         )
     }

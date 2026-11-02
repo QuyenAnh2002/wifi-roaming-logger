@@ -34,6 +34,7 @@ private val TIME_FORMATTER: ThreadLocal<SimpleDateFormat> =
 
 const val ROW_TYPE_CONNECTION = "CONNECTION"
 const val ROW_TYPE_SCAN = "SCAN"
+const val ROW_TYPE_RTT = "RTT"
 
 enum class CsvColumn(
     val header: String,
@@ -60,6 +61,12 @@ enum class CsvColumn(
     DISTANCE_LOG_2_5("distance_logdistance_2_5"),
     DISTANCE_LOG_3("distance_logdistance_3"),
     DISTANCE_LOG_3_5("distance_logdistance_3_5"),
+    DISTANCE_RTT("distance_rtt_m"),
+    DISTANCE_RTT_STDDEV("distance_rtt_stddev_m"),
+    RTT_STATUS("rtt_status"),
+    RTT_MODE("rtt_mode"),
+    RTT_SUCCESS_COUNT("rtt_success_count"),
+    RTT_ATTEMPT_COUNT("rtt_attempt_count"),
     STANDARD("standard"),
     SECURITY("security"),
     CAPABILITIES("capabilities"),

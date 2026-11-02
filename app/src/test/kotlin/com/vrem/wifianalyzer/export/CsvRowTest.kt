@@ -29,7 +29,8 @@ class CsvRowTest {
             "epoch_ms,time,row_type,event,ssid,bssid,connected,rssi_dbm,frequency_mhz,primary_channel," +
                 "center_channel,center_frequency_mhz,width_mhz,range_start_mhz,range_end_mhz,link_speed_mbps," +
                 "supplicant_state,distance_fspl_m,distance_logdistance_2,distance_logdistance_2_5," +
-                "distance_logdistance_3,distance_logdistance_3_5,standard,security,capabilities,fast_roaming," +
+                "distance_logdistance_3,distance_logdistance_3_5,distance_rtt_m,distance_rtt_stddev_m,rtt_status," +
+                "rtt_mode,rtt_success_count,rtt_attempt_count,standard,security,capabilities,fast_roaming," +
                 "is_80211mc,vendor,latitude,longitude,accuracy_m,altitude_m,speed_mps,location_provider," +
                 "location_age_ms\r\n",
         )
@@ -46,7 +47,7 @@ class CsvRowTest {
         // Act
         val actual = csvRow(mapOf(CsvColumn.ROW_TYPE to ROW_TYPE_SCAN, CsvColumn.LOCATION_AGE to "7"))
         // Assert
-        assertThat(actual).isEqualTo(",,SCAN" + ",".repeat(32) + "7\r\n")
+        assertThat(actual).isEqualTo(",,SCAN" + ",".repeat(38) + "7\r\n")
     }
 
     @Test

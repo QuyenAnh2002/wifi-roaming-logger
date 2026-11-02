@@ -100,6 +100,9 @@ class ConnectionLogger(
     @Volatile
     private var active = false
 
+    // Stored so stop() cancels only polling, never a beginLog / pauseLog that is still queued.
+    private val pollTask = Runnable { poll() }
+
     // Accessed on the logger thread only.
     private var previous: LogSample? = null
     private var logging = false
@@ -114,7 +117,7 @@ class ConnectionLogger(
         this.handler = handler
         active = true
         handler.post(::beginLog)
-        handler.postDelayed(::poll, intervalMs)
+        handler.postDelayed(pollTask, intervalMs)
         runCatching { connectivityManager.registerNetworkCallback(wifiRequest, networkCallback) }
     }
 
@@ -125,7 +128,7 @@ class ConnectionLogger(
         active = false
         runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
         handler?.apply {
-            removeCallbacksAndMessages(null)
+            removeCallbacks(pollTask)
             post(::pauseLog)
         }
     }
@@ -201,7 +204,7 @@ class ConnectionLogger(
             return
         }
         sample()
-        handler?.postDelayed(::poll, intervalMs)
+        handler?.postDelayed(pollTask, intervalMs)
     }
 
     private fun sample(event: LogEvent? = null) {

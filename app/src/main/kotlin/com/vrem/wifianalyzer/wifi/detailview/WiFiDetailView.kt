@@ -32,6 +32,7 @@ import com.vrem.wifianalyzer.wifi.model.WiFiAdditional
 import com.vrem.wifianalyzer.wifi.model.WiFiDetail
 import com.vrem.wifianalyzer.wifi.model.WiFiSecurity
 import com.vrem.wifianalyzer.wifi.model.WiFiSignal
+import java.util.Locale
 
 @OpenClass
 class WiFiDetailView(
@@ -91,10 +92,20 @@ class WiFiDetailView(
         view.findViewById<TextView>(R.id.channel).text = wiFiSignal.channelDisplay()
         view.findViewById<TextView>(R.id.primaryFrequency).text =
             "${wiFiSignal.primaryFrequency}${WiFiSignal.FREQUENCY_UNITS}"
-        view.findViewById<TextView>(R.id.distance).text = wiFiSignal.distance
+        view.findViewById<TextView>(R.id.distance).text = distance(wiFiDetail)
         view.findViewById<View>(R.id.tab).visibility = if (child) View.VISIBLE else View.GONE
         setSecurityImage(view, wiFiDetail)
         setLevelText(view, wiFiSignal)
+    }
+
+    /** The estimated distance, followed by the Wi-Fi RTT distance when a recent measurement exists. */
+    private fun distance(wiFiDetail: WiFiDetail): String {
+        val distance = wiFiDetail.wiFiSignal.distance
+        val rttMm =
+            MainContext.INSTANCE.rttRanger
+                .latest(wiFiDetail.wiFiIdentifier.bssid)
+                ?.distanceMm ?: return distance
+        return String.format(Locale.getDefault(), RTT_DISTANCE_FORMAT, distance, rttMm / MM_PER_METER)
     }
 
     private fun setSecurityImage(
@@ -213,5 +224,10 @@ class WiFiDetailView(
         view.findViewById<TextView>(R.id.channel_width)?.let {
             it.text = ContextCompat.getString(view.context, wiFiSignal.wiFiWidth.textResource)
         }
+    }
+
+    private companion object {
+        const val RTT_DISTANCE_FORMAT = "%s RTT %.1fm"
+        const val MM_PER_METER = 1000.0
     }
 }

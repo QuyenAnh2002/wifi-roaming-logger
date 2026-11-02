@@ -64,6 +64,10 @@ class MainActivity :
     internal val permissionLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.RequestPermission(), ::onPermissionResult)
 
+    // Wi-Fi RTT needs its own runtime permission (NEARBY_WIFI_DEVICES on Android 13+). A denial only disables RTT.
+    internal val rttPermissionLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     private val csvExport = CsvExport()
     internal var csvShare = CsvShare(this)
 
@@ -233,6 +237,7 @@ class MainActivity :
     public override fun onPause() {
         val scannerService = MainContext.INSTANCE.scannerService
         scannerService.pause()
+        MainContext.INSTANCE.rttRanger.stop()
         updateActionBar()
         super.onPause()
     }
@@ -277,6 +282,7 @@ class MainActivity :
         mainContext.locationTracker.start(mainLooper)
         mainContext.runTimer.start()
         connectionLogger.start()
+        mainContext.rttRanger.missingPermission?.let { rttPermissionLauncher.launch(it) }
     }
 
     internal fun stopRun() {

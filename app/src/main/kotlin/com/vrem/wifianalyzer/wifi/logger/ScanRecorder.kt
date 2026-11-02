@@ -80,6 +80,14 @@ class ScanRecorder(
         executor.execute { append(rows(scanResults, connectedBssid, nowMs, nowNanos)) }
     }
 
+    /**
+     * Appends rows built elsewhere (RTT rows) to the session history and the run log, on the same executor
+     * as the SCAN rows so the file order is kept.
+     */
+    fun appendRows(rows: String) {
+        executor.execute { append(rows) }
+    }
+
     /** Writes the session history as a complete CSV file to [target], then reports success on the main thread. */
     fun export(
         target: File,

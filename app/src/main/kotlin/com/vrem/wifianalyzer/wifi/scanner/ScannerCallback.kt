@@ -18,6 +18,7 @@
 package com.vrem.wifianalyzer.wifi.scanner
 
 import com.vrem.annotation.OpenClass
+import com.vrem.wifianalyzer.wifi.logger.RttRanger
 import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 
@@ -26,6 +27,7 @@ internal class ScannerCallback(
     private val wiFiManagerWrapper: WiFiManagerWrapper,
     private val cache: Cache,
     private val scanRecorder: ScanRecorder,
+    private val rttRanger: RttRanger,
 ) : Callback {
     override fun onSuccess() {
         val scanResults = wiFiManagerWrapper.scanResults()
@@ -33,5 +35,6 @@ internal class ScannerCallback(
         cache.add(scanResults)
         cache.wifiInfo = wifiInfo
         scanRecorder.record(scanResults, wifiInfo?.bssid)
+        rttRanger.update(scanResults, wifiInfo?.bssid)
     }
 }

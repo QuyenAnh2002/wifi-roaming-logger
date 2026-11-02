@@ -107,7 +107,7 @@ class ConnectionLoggerTest {
         assertThat(actual).startsWith("1000,")
         assertThat(actual).endsWith(
             ",CONNECTION,BSSID+RSSI,\"a,b\",BSSID,true,-50,5180,,,,,,,866,COMPLETED," +
-                "1.5,1.5,1.4,1.3,1.2,,,,,,,20.9876543,105.7654321,4.5,12.3,1.25,fused,250\r\n",
+                "1.5,1.5,1.4,1.3,1.2,,,,,,,,,,,,,20.9876543,105.7654321,4.5,12.3,1.25,fused,250\r\n",
         )
     }
 
@@ -118,7 +118,9 @@ class ConnectionLoggerTest {
         // Act
         val actual = fixture.line(1000L, listOf(LogEvent.RSSI), sample, partial)
         // Assert
-        assertThat(actual).endsWith(",COMPLETED,1.5,1.5,1.4,1.3,1.2,,,,,,,20.9876543,105.7654321,,,,fused,250\r\n")
+        assertThat(
+            actual,
+        ).endsWith(",COMPLETED,1.5,1.5,1.4,1.3,1.2,,,,,,,,,,,,,20.9876543,105.7654321,,,,fused,250\r\n")
     }
 
     @Test
@@ -126,7 +128,7 @@ class ConnectionLoggerTest {
         // Act
         val actual = fixture.line(1000L, listOf(LogEvent.RSSI), sample, null)
         // Assert
-        assertThat(actual).endsWith(",COMPLETED,1.5,1.5,1.4,1.3,1.2" + ",".repeat(13) + "\r\n")
+        assertThat(actual).endsWith(",COMPLETED,1.5,1.5,1.4,1.3,1.2" + ",".repeat(19) + "\r\n")
     }
 
     @Test
@@ -135,7 +137,7 @@ class ConnectionLoggerTest {
         val actual = fixture.line(1000L, listOf(LogEvent.DISCONNECTED), null, null)
         // Assert
         assertThat(actual).startsWith("1000,")
-        assertThat(actual).endsWith(",CONNECTION,DISCONNECTED,,,false" + ",".repeat(28) + "\r\n")
+        assertThat(actual).endsWith(",CONNECTION,DISCONNECTED,,,false" + ",".repeat(34) + "\r\n")
     }
 
     @Test
@@ -143,7 +145,7 @@ class ConnectionLoggerTest {
         // Act
         val actual = fixture.line(1000L, listOf(LogEvent.CONNECTED), sample.copy(rssi = -127), location)
         // Assert
-        assertThat(actual).contains(",true,,5180,,,,,,,866,COMPLETED" + ",".repeat(12) + "20.9876543,")
+        assertThat(actual).contains(",true,,5180,,,,,,,866,COMPLETED" + ",".repeat(18) + "20.9876543,")
     }
 
     @Test
@@ -195,6 +197,24 @@ class ConnectionLoggerTest {
         verify(scanRecorder).runLog = logFile
         verify(scanRecorder, times(2)).runLog = null
         verify(logFile).close()
+    }
+
+    @Test
+    fun stopRightAfterStartStillWritesStartAndPause() {
+        // Arrange
+        val logger = withMocks()
+        val rows = argumentCaptor<String>()
+        whenever(logFile.opened).thenReturn(false)
+        // Act
+        logger.start()
+        logger.stop()
+        idleLoggerThread()
+        // Assert
+        verify(logFile).open(CSV_HEADER)
+        verify(logFile, times(2)).write(rows.capture())
+        assertThat(rows.firstValue).contains(",CONNECTION,START,")
+        assertThat(rows.secondValue).contains(",CONNECTION,PAUSE,")
+        logger.close()
     }
 
     @Test

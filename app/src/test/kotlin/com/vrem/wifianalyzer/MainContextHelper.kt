@@ -22,6 +22,7 @@ import com.vrem.wifianalyzer.settings.Settings
 import com.vrem.wifianalyzer.vendor.model.VendorService
 import com.vrem.wifianalyzer.wifi.filter.adapter.FiltersAdapter
 import com.vrem.wifianalyzer.wifi.logger.LocationTracker
+import com.vrem.wifianalyzer.wifi.logger.RttRanger
 import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import com.vrem.wifianalyzer.wifi.scanner.ScannerService
@@ -104,6 +105,13 @@ enum class MainContextHelper {
             return mainContext.locationTracker
         }
 
+    val rttRanger: RttRanger
+        get() {
+            runCatching { saved[RttRanger::class.java] = mainContext.rttRanger }
+            mainContext.rttRanger = mock()
+            return mainContext.rttRanger
+        }
+
     fun restore() {
         saved.entries.forEach {
             when (it.key) {
@@ -117,6 +125,7 @@ enum class MainContextHelper {
                 WiFiManagerWrapper::class.java -> mainContext.wiFiManagerWrapper = it.value as WiFiManagerWrapper
                 ScanRecorder::class.java -> mainContext.scanRecorder = it.value as ScanRecorder
                 LocationTracker::class.java -> mainContext.locationTracker = it.value as LocationTracker
+                RttRanger::class.java -> mainContext.rttRanger = it.value as RttRanger
             }
         }
         saved.clear()

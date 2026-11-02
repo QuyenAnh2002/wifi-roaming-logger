@@ -184,6 +184,19 @@ class ScanRecorderTest {
     }
 
     @Test
+    fun appendRowsWritesToHistoryAndActiveRunLog() {
+        // Arrange
+        fixture.runLog = logFile
+        // Act
+        fixture.appendRows("RTT1$ROW_END")
+        fixture.appendRows("")
+        // Assert
+        verify(logFile).write("RTT1$ROW_END")
+        assertThat(history.readText()).isEqualTo("RTT1$ROW_END")
+        assertThat(fixture.empty).isFalse
+    }
+
+    @Test
     fun exportWritesHeaderAndWholeSessionHistory() {
         // Arrange
         fixture.record(listOf(scanResult("SSID", "BSSID1", SEEN_MICROS)), null)

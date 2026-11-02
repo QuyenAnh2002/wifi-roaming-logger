@@ -74,6 +74,7 @@ class CsvShareTest {
         assertThat(uri.scheme).isEqualTo("content")
         assertThat(uri.toString()).isEqualTo("content://test.fileprovider/exports/export.csv")
         assertThat(send.clipData!!.getItemAt(0).uri).isEqualTo(uri)
+        assertAlternate(actual, Intent.ACTION_SEND)
         val initial = actual.getParcelableArrayExtra(Intent.EXTRA_INITIAL_INTENTS, Parcelable::class.java)!!
         assertThat(initial).hasSize(1)
         val save = initial[0] as LabeledIntent
@@ -92,6 +93,23 @@ class CsvShareTest {
     }
 
     @Test
+    fun chooserSharesSingleRunFileAsOneDocument() {
+        // Arrange
+        val uri = Uri.parse("content://media/external/downloads/1")
+        // Act
+        val actual = fixture.chooser(listOf(uri))
+        // Assert
+        assertThat(actual.action).isEqualTo(Intent.ACTION_CHOOSER)
+        val send = actual.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
+        assertThat(send.action).isEqualTo(Intent.ACTION_SEND)
+        assertThat(send.type).isEqualTo(CsvShare.MIME_TYPE)
+        assertThat(send.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)).isEqualTo(uri)
+        assertThat(send.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotZero
+        assertThat(send.clipData!!.getItemAt(0).uri).isEqualTo(uri)
+        assertAlternate(actual, Intent.ACTION_SEND)
+    }
+
+    @Test
     fun chooserSharesMultipleFiles() {
         // Arrange
         val first = Uri.parse("content://media/external/downloads/1")
@@ -107,6 +125,21 @@ class CsvShareTest {
         assertThat(streams).containsExactly(first, second)
         assertThat(send.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotZero
         assertThat(send.clipData!!.itemCount).isEqualTo(2)
+        assertAlternate(actual, Intent.ACTION_SEND_MULTIPLE)
+    }
+
+    private fun assertAlternate(
+        chooser: Intent,
+        action: String,
+    ) {
+        val alternates = chooser.getParcelableArrayExtra(Intent.EXTRA_ALTERNATE_INTENTS, Intent::class.java)!!
+        assertThat(alternates).hasSize(1)
+        val alternate = alternates[0]
+        val send = chooser.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
+        assertThat(alternate.action).isEqualTo(action)
+        assertThat(alternate.type).isEqualTo(CsvShare.ALTERNATE_MIME_TYPE)
+        assertThat(alternate.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotZero
+        assertThat(alternate.clipData!!.itemCount).isEqualTo(send.clipData!!.itemCount)
     }
 
     private fun CsvShare.write(

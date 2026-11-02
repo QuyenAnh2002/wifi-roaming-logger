@@ -19,6 +19,7 @@ package com.vrem.wifianalyzer.wifi.scanner
 
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
+import com.vrem.wifianalyzer.wifi.logger.RttRanger
 import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import org.junit.After
@@ -32,15 +33,17 @@ class ScannerCallbackTest {
     private val wiFiManagerWrapper: WiFiManagerWrapper = mock()
     private val cache: Cache = mock()
     private val scanRecorder: ScanRecorder = mock()
+    private val rttRanger: RttRanger = mock()
     private val scanner: Scanner = mock()
     private val wifiInfo: WifiInfo = mock()
     private val scanResults: List<ScanResult> = listOf()
-    private val fixture = ScannerCallback(wiFiManagerWrapper, cache, scanRecorder)
+    private val fixture = ScannerCallback(wiFiManagerWrapper, cache, scanRecorder, rttRanger)
 
     @After
     fun tearDown() {
         verifyNoMoreInteractions(cache)
         verifyNoMoreInteractions(scanRecorder)
+        verifyNoMoreInteractions(rttRanger)
         verifyNoMoreInteractions(scanner)
         verifyNoMoreInteractions(wiFiManagerWrapper)
     }
@@ -59,6 +62,7 @@ class ScannerCallbackTest {
         verify(cache).add(scanResults)
         verify(cache).wifiInfo = wifiInfo
         verify(scanRecorder).record(scanResults, BSSID)
+        verify(rttRanger).update(scanResults, BSSID)
     }
 
     @Test
@@ -74,6 +78,7 @@ class ScannerCallbackTest {
         verify(cache).add(scanResults)
         verify(cache).wifiInfo = null
         verify(scanRecorder).record(scanResults, null)
+        verify(rttRanger).update(scanResults, null)
     }
 
     private companion object {

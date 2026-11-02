@@ -30,6 +30,7 @@ import com.vrem.wifianalyzer.settings.Settings
 import com.vrem.wifianalyzer.vendor.model.VendorService
 import com.vrem.wifianalyzer.wifi.filter.adapter.FiltersAdapter
 import com.vrem.wifianalyzer.wifi.logger.LocationTracker
+import com.vrem.wifianalyzer.wifi.logger.RttRanger
 import com.vrem.wifianalyzer.wifi.logger.ScanRecorder
 import com.vrem.wifianalyzer.wifi.manager.WiFiManagerWrapper
 import com.vrem.wifianalyzer.wifi.scanner.ScannerService
@@ -58,6 +59,7 @@ enum class MainContext {
     // so the session history and location fixes are not lost on rotation or a settings reload.
     lateinit var locationTracker: LocationTracker
     lateinit var scanRecorder: ScanRecorder
+    lateinit var rttRanger: RttRanger
 
     val context: Context get() = mainActivity.applicationContext
 
@@ -82,6 +84,9 @@ enum class MainContext {
         if (!::scanRecorder.isInitialized) {
             scanRecorder = ScanRecorder(context, locationTracker::at, File(context.noBackupFilesDir, SCAN_HISTORY_FILE))
         }
+        if (!::rttRanger.isInitialized) {
+            rttRanger = RttRanger(context, locationTracker::at, scanRecorder::appendRows)
+        }
         scannerService =
             makeScannerService(
                 mainActivity,
@@ -91,6 +96,7 @@ enum class MainContext {
                 settings,
                 configuration,
                 scanRecorder,
+                rttRanger,
             )
         filtersAdapter = FiltersAdapter(settings)
     }
