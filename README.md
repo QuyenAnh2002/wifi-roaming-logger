@@ -74,7 +74,7 @@ The README of the original repository lists four key GPLv3 requirements. This ve
 
 | Requirement | What it means (GPLv3 clause) | This version |
 |---|---|---|
-| **Disclose Source** | Anyone who receives a build (APK) must also be able to get the complete corresponding source code, including build scripts (clauses 1, 6) | All source code and build scripts are in this repository. The repository is currently **private**, so follow section 2.2 before giving an APK to anyone |
+| **Disclose Source** | Anyone who receives a build (APK) must also be able to get the complete corresponding source code, including build scripts (clauses 1, 6) | All source code and build scripts are in this public repository. When giving an APK to anyone, follow section 2.2 |
 | **License and Copyright Notice** | Keep the license, the copyright notices and the no-warranty notices of the original authors intact; interactive user interfaces must display them (clauses 4, 5d) | `LICENSE` and the VREM Software Development copyright header are kept in every file, including new files. The app's **About** screen still shows the copyright notice and the full GPLv3 text, together with the Apache 2.0 license of the third-party libraries (this version adds no new libraries) |
 | **Same License** | The whole modified version must be released under the GPLv3, with no further restrictions on recipients (clauses 5c, 10) | The whole repository is GPLv3 or later, with no additional terms |
 | **State Changes** | A modified version must carry prominent notices stating that it was modified, with a relevant date (clause 5a) | Section 4 of this README summarizes the changes from the original commit; the `git diff` command in section 1 gives the exact list of files. The header of every added or modified `.kt` / `.xml` file has two notice lines right below the original copyright line (example below). The git history records each change with its date |
@@ -101,7 +101,7 @@ New files use the two lines `Copyright (C) 2026 QuyenAnh2002, Pham Anh Dung` and
 
 As long as builds are only used internally and not given to anyone, the GPLv3 requires nothing more. When you give an APK (or any other build) to someone else, even free of charge:
 
-1. **Provide the corresponding source code** for exactly that build (the commit it was built from), in one of the ways listed in clause 6 of the GPLv3. For example, ship the source together with the APK, or put a source download link right next to the APK download link. This repository is currently **private**, so a link to it is **not enough**: either make the repository public or ship the source, for example:
+1. **Provide the corresponding source code** for exactly that build (the commit it was built from), in one of the ways listed in clause 6 of the GPLv3. Since this repository is public, a link to the exact commit or tag the APK was built from, placed right next to the APK download link, is enough, as long as the repository stays public for as long as the APK is offered. Alternatively, ship the source together with the APK, for example:
    ```bash
    git archive --format=zip -o wifianalyzer-src.zip HEAD
    ```
